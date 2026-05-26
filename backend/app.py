@@ -7,7 +7,8 @@ from functools import wraps
 
 BASE_DIR    = os.path.dirname(__file__)
 FRONTEND    = os.path.join(BASE_DIR, '..')   # ../  = Project/
-DB_PATH     = os.path.join(BASE_DIR, 'school.db')
+DB_PATH     = os.environ.get('DB_PATH', os.path.join(BASE_DIR, 'school.db'))
+# On Render with a persistent disk mounted at /data, set DB_PATH=/data/school.db
 
 app = Flask(__name__, static_folder=FRONTEND, static_url_path='')
 CORS(app, origins='*')   # allow GitHub Pages or any frontend
