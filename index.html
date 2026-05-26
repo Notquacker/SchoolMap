@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lokaalbezetting – 1e Verdieping</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <!-- SheetJS voor Excel-bestanden -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <h1>Lokaalbezetting</h1>
+      <span class="subtitle">1e Verdieping – Mijnheerenland</span>
+    </div>
+    <div class="header-right">
+      <div id="clock"></div>
+      <div id="mqtt-status" class="mqtt-badge disconnected">MQTT: verbinden…</div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ═══ TAB NAVIGATIE ═══ -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('plattegrond')">🗺 Plattegrond</button>
+      <button class="tab-btn"        onclick="switchTab('rooster')">📅 Rooster uploaden</button>
+    </nav>
+
+    <!-- ═══ TAB 1: PLATTEGROND ═══ -->
+    <div id="tab-plattegrond" class="tab-content">
+
+      <section class="plattegrond-wrapper">
+        <h2>Plattegrond — 1e verdieping</h2>
+
+        <div class="zoom-wrapper" id="zoom-wrapper">
+          <div class="fp-container" id="fp-container">
+            <img id="fp-img" src="plattegrond.jpg" alt="Plattegrond 1e verdieping"
+                 onerror="this.src='plattegrond.png'"/>
+
+            <div class="room-overlay vrij" id="room-144" onclick="selectRoom('144')">
+              <span class="room-badge">L01.144</span>
+            </div>
+            <div class="room-overlay vrij" id="room-149" onclick="selectRoom('149')">
+              <span class="room-badge">L01.149</span>
+            </div>
+            <div class="room-overlay vrij" id="room-239" onclick="selectRoom('239')">
+              <span class="room-badge">L01.239</span>
+            </div>
+            <div class="room-overlay vrij sensor-room" id="room-243" onclick="selectRoom('243')">
+              <span class="room-badge">L01.243 📡</span>
+            </div>
+            <div class="room-overlay vrij sensor-room" id="room-249" onclick="selectRoom('249')">
+              <span class="room-badge">L01.249 📡</span>
+            </div>
+
+            <div class="fp-legend">
+              <span class="leg vrij">Vrij</span>
+              <span class="leg bezet">Bezet</span>
+              <span class="leg gereserveerd">Ingeroosterd / Gereserveerd</span>
+              <span class="leg sensor">📡 live sensor</span>
+            </div>
+          </div>
+
+          <div class="zoom-controls">
+            <button onclick="zoomBtn(1.4)" title="Inzoomen">＋</button>
+            <button onclick="resetZoom()" title="Reset">⊙</button>
+            <button onclick="zoomBtn(0.71)" title="Uitzoomen">－</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="info-grid">
+        <div id="detail-panel" class="panel">
+          <h3 id="detail-title">Klik op een lokaal</h3>
+          <div id="detail-content">
+            <p class="hint">Selecteer een lokaal op de plattegrond om details en opties te zien.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Vandaag ingeroosterd &amp; gereserveerd</h3>
+          <div id="reservations-list">
+            <p class="hint">Geen items gevonden.</p>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /tab-plattegrond -->
+
+    <!-- ═══ TAB 2: ROOSTER UPLOADEN ═══ -->
+    <div id="tab-rooster" class="tab-content" style="display:none">
+
+      <!-- LOGIN SCHERM (zichtbaar als niet ingelogd) -->
+      <div id="rooster-login" class="login-card">
+        <div class="login-icon">🔒</div>
+        <h3>Inloggen vereist</h3>
+        <p>Alleen roostercommissie-leden kunnen roosterdata uploaden.</p>
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <label>Gebruikersnaam
+            <input type="text" id="login-user" required autocomplete="username" placeholder="admin"/>
+          </label>
+          <label>Wachtwoord
+            <input type="password" id="login-pass" required autocomplete="current-password" placeholder="••••••••"/>
+          </label>
+          <div id="login-error" class="login-error"></div>
+          <button type="submit" class="btn-primary" id="login-btn">Inloggen</button>
+        </form>
+      </div>
+
+      <!-- INHOUD NA INLOGGEN (verborgen totdat je inlogt) -->
+      <div id="rooster-authenticated" style="display:none">
+
+        <!-- Gebruikersbalk -->
+        <div class="user-bar">
+          <span>Ingelogd als <strong id="rooster-username"></strong></span>
+          <button class="btn-outline" onclick="handleLogout()">Uitloggen</button>
+        </div>
+
+      <div class="rooster-page">
+
+        <!-- Upload kaart -->
+        <div class="upload-card" id="drop-zone">
+          <div class="upload-icon">📂</div>
+          <p class="upload-title">Sleep een CSV of Excel-bestand hiernaartoe</p>
+          <p class="upload-sub">Bestand van de roostercommissie (CSV of .xlsx)</p>
+          <div class="upload-actions">
+            <label class="btn-primary">
+              Kies bestand
+              <input type="file" id="rooster-file" accept=".csv,.xlsx,.xls" hidden/>
+            </label>
+            <button class="btn-outline" onclick="downloadTemplate()">⬇ Download sjabloon</button>
+          </div>
+          <div class="upload-format">
+            <strong>Verwacht formaat — kolommen:</strong>
+            <code>Lokaal &nbsp;·&nbsp; Datum &nbsp;·&nbsp; Van &nbsp;·&nbsp; Tot &nbsp;·&nbsp; Groep &nbsp;·&nbsp; Vak</code>
+            <span>Lokaal: gebruik 144, 149, 239, 243 of 249 &nbsp;|&nbsp; Datum: 2026-05-20</span>
+          </div>
+          <div id="upload-feedback"></div>
+        </div>
+
+        <!-- Rooster tabel -->
+        <div class="rooster-table-card" id="rooster-table-wrapper" style="display:none">
+          <div class="rooster-table-header">
+            <h3>Ingeroosterde lokalen <span id="rooster-count-badge"></span></h3>
+            <div class="rooster-filters">
+              <label>Datum
+                <input type="date" id="rooster-filter-date" oninput="renderRoosterTable()"/>
+              </label>
+              <label>Lokaal
+                <select id="rooster-filter-room" onchange="renderRoosterTable()">
+                  <option value="">Alle lokalen</option>
+                  <option value="144">L01.144</option>
+                  <option value="149">L01.149</option>
+                  <option value="239">L01.239</option>
+                  <option value="243">L01.243</option>
+                  <option value="249">L01.249</option>
+                </select>
+              </label>
+              <button class="btn-danger" onclick="clearRooster()">🗑 Verwijder alles</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="rooster-table">
+              <thead>
+                <tr>
+                  <th>Lokaal</th><th>Datum</th><th>Van</th><th>Tot</th>
+                  <th>Groep</th><th>Vak</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="rooster-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /rooster-page -->
+      </div><!-- /rooster-authenticated -->
+
+    </div><!-- /tab-rooster -->
+
+  </main>
+
+  <!-- Reservering modal -->
+  <div id="modal-overlay" class="hidden" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Reserveer lokaal <span id="modal-room-label"></span></h3>
+      <form id="reserveer-form">
+        <label>Naam / groep
+          <input type="text" id="res-naam" required placeholder="bijv. Klas 2A" />
+        </label>
+        <label>Datum
+          <input type="date" id="res-datum" required />
+        </label>
+        <label>Van
+          <input type="time" id="res-van" required value="09:00" />
+        </label>
+        <label>Tot
+          <input type="time" id="res-tot" required value="11:00" />
+        </label>
+        <label>Doel
+          <input type="text" id="res-doel" placeholder="bijv. Practicum, Les, Vergadering" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" onclick="closeModal()">Annuleer</button>
+          <button type="submit" class="btn-primary">Reserveer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

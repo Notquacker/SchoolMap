@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Plattegrond kalibratie</title>
+  <style>
+    body { margin: 0; background: #222; font-family: monospace; color: white; }
+    h2 { margin: 10px 16px 4px; font-size: 1rem; }
+    p  { margin: 0 16px 8px; font-size: .8rem; color: #aaa; }
+
+    #wrapper {
+      position: relative;
+      display: inline-block;
+      cursor: crosshair;
+      margin: 0 16px;
+    }
+    #floorplan { display: block; max-width: 100%; }
+
+    .overlay-box {
+      position: absolute;
+      border: 3px dashed white;
+      background: rgba(255,255,255,0.15);
+      cursor: move;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 1px 3px #000;
+      min-width: 60px;
+      min-height: 30px;
+    }
+    .overlay-box .resize-handle {
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 14px; height: 14px;
+      background: white;
+      cursor: se-resize;
+      opacity: 0.7;
+    }
+
+    /* kleuren per lokaal */
+    #box-144 { background: rgba(76,175,80,0.35);  border-color: #4caf50; }
+    #box-149 { background: rgba(33,150,243,0.35); border-color: #2196f3; }
+    #box-239 { background: rgba(255,152,0,0.35);  border-color: #ff9800; }
+    #box-243 { background: rgba(244,67,54,0.35);  border-color: #f44336; }
+    #box-249 { background: rgba(156,39,176,0.35); border-color: #9c27b0; }
+
+    #coords {
+      position: fixed;
+      bottom: 12px; right: 16px;
+      background: #111;
+      border: 1px solid #555;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: .8rem;
+      line-height: 1.8;
+    }
+    #output {
+      margin: 12px 16px;
+      background: #111;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: .75rem;
+      white-space: pre;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    button {
+      margin: 8px 16px;
+      padding: 8px 18px;
+      background: #1a237e;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .85rem;
+    }
+    button:hover { background: #283593; }
+  </style>
+</head>
+<body>
+
+<h2>Kalibratie — sleep de gekleurde vakjes over de juiste lokalen</h2>
+<p>
+  Sleep elk vak naar het correcte lokaal op de plattegrond.
+  Sleep de witte hoek rechtsonder om het vak groter/kleiner te maken.
+  Klik daarna op "Kopieer coördinaten".
+</p>
+
+<div id="wrapper">
+  <img id="floorplan" src="plattegrond.jpg"
+       alt="Plattegrond — zorg dat plattegrond.jpg in dezelfde map staat"
+       onerror="this.src='plattegrond.png'"/>
+
+  <!-- Sleepbare vakjes, beginpositie is een schatting -->
+  <div class="overlay-box" id="box-144" style="left:50px;top:80px;width:120px;height:70px;">
+    L01.144<div class="resize-handle"></div>
+  </div>
+  <div class="overlay-box" id="box-149" style="left:180px;top:80px;width:120px;height:70px;">
+    L01.149<div class="resize-handle"></div>
+  </div>
+  <div class="overlay-box" id="box-239" style="left:350px;top:280px;width:150px;height:80px;">
+    L01.239<div class="resize-handle"></div>
+  </div>
+  <div class="overlay-box" id="box-243" style="left:510px;top:280px;width:150px;height:80px;">
+    L01.243 📡<div class="resize-handle"></div>
+  </div>
+  <div class="overlay-box" id="box-249" style="left:670px;top:280px;width:120px;height:80px;">
+    L01.249 📡<div class="resize-handle"></div>
+  </div>
+</div>
+
+<button onclick="copyCoords()">Kopieer coördinaten</button>
+<div id="output">Klik op "Kopieer coördinaten" om de posities te zien.</div>
+
+<div id="coords">
+  Muis: <span id="mx">0</span>, <span id="my">0</span><br/>
+  Schaalfactor: <span id="scale">1.00</span>
+</div>
+
+<script>
+  const img = document.getElementById('floorplan');
+  const wrapper = document.getElementById('wrapper');
+
+  // Toon muiscoördinaten relatief aan de afbeelding
+  wrapper.addEventListener('mousemove', e => {
+    const rect = img.getBoundingClientRect();
+    const scaleX = img.naturalWidth  / rect.width;
+    const scaleY = img.naturalHeight / rect.height;
+    const x = Math.round((e.clientX - rect.left) * scaleX);
+    const y = Math.round((e.clientY - rect.top)  * scaleY);
+    document.getElementById('mx').textContent = x;
+    document.getElementById('my').textContent = y;
+    document.getElementById('scale').textContent = scaleX.toFixed(2);
+  });
+
+  // ── Drag & resize logica ──
+  let active = null, mode = null;
+  let startX, startY, startL, startT, startW, startH;
+
+  document.querySelectorAll('.overlay-box').forEach(box => {
+    box.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('resize-handle')) {
+        mode = 'resize';
+      } else {
+        mode = 'drag';
+      }
+      active = box;
+      startX = e.clientX;
+      startY = e.clientY;
+      startL = parseInt(box.style.left);
+      startT = parseInt(box.style.top);
+      startW = parseInt(box.style.width)  || box.offsetWidth;
+      startH = parseInt(box.style.height) || box.offsetHeight;
+      e.preventDefault();
+    });
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!active) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (mode === 'drag') {
+      active.style.left = (startL + dx) + 'px';
+      active.style.top  = (startT + dy) + 'px';
+    } else {
+      active.style.width  = Math.max(40, startW + dx) + 'px';
+      active.style.height = Math.max(20, startH + dy) + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', () => { active = null; });
+
+  // ── Coördinaten exporteren ──
+  function copyCoords() {
+    const rect = img.getBoundingClientRect();
+    const scaleX = img.naturalWidth  / rect.width;
+    const scaleY = img.naturalHeight / rect.height;
+
+    const boxes = ['144','149','239','243','249'];
+    const out = boxes.map(id => {
+      const b = document.getElementById('box-' + id);
+      const l = Math.round(parseInt(b.style.left) * scaleX);
+      const t = Math.round(parseInt(b.style.top)  * scaleY);
+      const w = Math.round(b.offsetWidth           * scaleX);
+      const h = Math.round(b.offsetHeight          * scaleY);
+      return `${id}: x=${l}, y=${t}, breedte=${w}, hoogte=${h}`;
+    }).join('\n');
+
+    document.getElementById('output').textContent = out;
+    navigator.clipboard?.writeText(out).catch(() => {});
+    alert('Coördinaten staan hieronder!\nKopieer ze en stuur ze naar mij zodat ik de website kan updaten.');
+  }
+</script>
+</body>
+</html>

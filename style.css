@@ -1,0 +1,508 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f5f6fa;
+  color: #222;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  background: #1a237e;
+  color: white;
+  padding: 14px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+header h1 { font-size: 1.4rem; font-weight: 700; }
+.subtitle { font-size: .85rem; opacity: .75; }
+.header-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+#clock { font-size: 1.1rem; font-weight: 600; letter-spacing: 1px; }
+
+.mqtt-badge {
+  font-size: .7rem;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  letter-spacing: .5px;
+}
+.mqtt-badge.connected    { background: #4caf50; color: white; }
+.mqtt-badge.disconnected { background: #f44336; color: white; }
+.mqtt-badge.connecting   { background: #ff9800; color: white; }
+
+/* ── Main layout ── */
+main { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+
+h2 { font-size: 1rem; font-weight: 600; margin-bottom: 10px; color: #1a237e; }
+
+/* ── Tab navigatie ── */
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 0;
+}
+.tab-btn {
+  padding: 10px 22px;
+  border: none;
+  background: none;
+  font-size: .9rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  border-radius: 6px 6px 0 0;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.tab-btn:hover  { color: #1a237e; background: #f0f2ff; }
+.tab-btn.active { color: #1a237e; border-bottom-color: #1a237e; background: #f0f2ff; }
+
+/* ── Login scherm ── */
+.login-card {
+  background: white;
+  border-radius: 14px;
+  padding: 40px;
+  max-width: 400px;
+  margin: 40px auto;
+  box-shadow: 0 4px 24px rgba(0,0,0,.10);
+  text-align: center;
+}
+.login-icon { font-size: 3rem; margin-bottom: 10px; }
+.login-card h3 { font-size: 1.2rem; color: #1a237e; margin-bottom: 6px; }
+.login-card p  { color: #777; font-size: .85rem; margin-bottom: 24px; }
+.login-card form { text-align: left; }
+.login-card label {
+  display: flex; flex-direction: column;
+  font-size: .82rem; font-weight: 600; color: #555;
+  margin-bottom: 12px; gap: 4px;
+}
+.login-card input {
+  padding: 10px 12px;
+  border: 1.5px solid #ccc;
+  border-radius: 8px;
+  font-size: .9rem;
+  outline: none;
+  transition: border-color .15s;
+}
+.login-card input:focus { border-color: #1a237e; }
+.login-card .btn-primary { width: 100%; margin-top: 6px; padding: 11px; font-size: .95rem; }
+.login-error { color: #c62828; font-size: .8rem; min-height: 18px; margin-bottom: 4px; font-weight: 600; }
+
+/* ── Gebruikersbalk ── */
+.user-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #e8eaf6;
+  border-radius: 10px;
+  padding: 10px 18px;
+  margin-bottom: 16px;
+  font-size: .85rem;
+  color: #333;
+}
+.user-bar strong { color: #1a237e; }
+
+/* ── Rooster upload pagina ── */
+.rooster-page { display: flex; flex-direction: column; gap: 20px; }
+
+.upload-card {
+  background: white;
+  border: 2px dashed #b0b8e8;
+  border-radius: 14px;
+  padding: 36px 24px;
+  text-align: center;
+  transition: border-color .2s, background .2s;
+}
+.upload-card.drag-over { border-color: #1a237e; background: #f0f2ff; }
+.upload-icon  { font-size: 2.8rem; margin-bottom: 10px; }
+.upload-title { font-size: 1.05rem; font-weight: 700; color: #222; margin-bottom: 4px; }
+.upload-sub   { color: #888; font-size: .85rem; margin-bottom: 16px; }
+
+.upload-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 18px; }
+
+.btn-outline {
+  padding: 9px 20px;
+  border: 2px solid #1a237e;
+  color: #1a237e;
+  background: none;
+  border-radius: 8px;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-outline:hover { background: #f0f2ff; }
+
+.btn-danger {
+  padding: 7px 16px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-danger:hover { background: #c62828; }
+
+.upload-format {
+  background: #f5f6fa;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: .8rem;
+  color: #555;
+  display: inline-block;
+  text-align: left;
+  line-height: 1.9;
+}
+.upload-format code {
+  background: #e8eaf6;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  display: block;
+  margin: 4px 0;
+  color: #1a237e;
+}
+.upload-format span { display: block; color: #888; }
+
+#upload-feedback {
+  margin-top: 12px;
+  font-size: .85rem;
+  font-weight: 600;
+  min-height: 20px;
+}
+#upload-feedback.ok  { color: #388e3c; }
+#upload-feedback.err { color: #c62828; }
+
+/* ── Rooster tabel kaart ── */
+.rooster-table-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+.rooster-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.rooster-table-header h3 { font-size: .95rem; color: #1a237e; font-weight: 700; }
+
+#rooster-count-badge {
+  background: #1a237e;
+  color: white;
+  font-size: .7rem;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.rooster-filters {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.rooster-filters label {
+  font-size: .78rem;
+  font-weight: 600;
+  color: #555;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rooster-filters input,
+.rooster-filters select {
+  padding: 6px 8px;
+  border: 1.5px solid #ccc;
+  border-radius: 6px;
+  font-size: .85rem;
+}
+
+.table-scroll { overflow-x: auto; }
+.rooster-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+}
+.rooster-table th {
+  background: #f0f2ff;
+  color: #1a237e;
+  font-weight: 700;
+  padding: 9px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+.rooster-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.rooster-table tr:last-child td { border-bottom: none; }
+.rooster-table tr:hover td { background: #fafafa; }
+.del-btn {
+  background: none;
+  border: none;
+  color: #f44336;
+  cursor: pointer;
+  font-size: .85rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.del-btn:hover { background: #fde8e8; }
+
+/* ── Plattegrond met echte afbeelding ── */
+.plattegrond-wrapper {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  margin-bottom: 20px;
+}
+
+/* ── Zoom wrapper (de 'kijkvenster') ── */
+.zoom-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #bbb;
+  height: 520px;
+  cursor: grab;
+  user-select: none;
+}
+.zoom-wrapper:active { cursor: grabbing; }
+
+/* ── Zoom knoppen ── */
+.zoom-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 20;
+}
+.zoom-controls button {
+  width: 36px;
+  height: 36px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,.18);
+  transition: background .1s;
+}
+.zoom-controls button:hover { background: #f0f0f0; }
+
+/* ── Container (de verschuifbare plattegrond) ── */
+.fp-container {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.fp-container img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Kamer-overlays ── */
+.room-overlay {
+  position: absolute;
+  cursor: pointer;
+  border: 3px solid;
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
+  transition: background .25s, outline .15s;
+  box-sizing: border-box;
+}
+.room-overlay.vrij         { border-color: rgba(56,142,60,.95);  background: rgba(76,175,80,.22); }
+.room-overlay.bezet        { border-color: rgba(198,40,40,.95);  background: rgba(244,67,54,.30); }
+.room-overlay.gereserveerd { border-color: rgba(230,81,0,.95);   background: rgba(255,152,0,.25); }
+.room-overlay:hover        { filter: brightness(1.15); }
+.room-overlay.selected     { outline: 3px solid #1a237e; outline-offset: 1px; }
+
+.room-badge {
+  background: rgba(0,0,0,.60);
+  color: white;
+  font-size: .62rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1.5;
+}
+
+/* ── Legenda op de plattegrond ── */
+.fp-legend {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.leg {
+  font-size: .68rem;
+  padding: 2px 9px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: white;
+  opacity: .9;
+}
+.leg.vrij         { background: #388e3c; }
+.leg.bezet        { background: #c62828; }
+.leg.gereserveerd { background: #e65100; }
+.leg.sensor       { background: rgba(0,0,0,.55); }
+
+/* ── Info grid ── */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 640px) { .info-grid { grid-template-columns: 1fr; } }
+
+.panel {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+.panel h3 { font-size: .95rem; color: #1a237e; margin-bottom: 14px; font-weight: 700; }
+
+.hint { color: #888; font-size: .85rem; font-style: italic; }
+
+/* ── Detail panel ── */
+.detail-status {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 12px;
+}
+.status-vrij         { background: #4caf50; }
+.status-bezet        { background: #f44336; }
+.status-gereserveerd { background: #ff9800; }
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: .85rem;
+  padding: 5px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.detail-row:last-of-type { border-bottom: none; }
+.detail-row span:first-child { color: #666; }
+.detail-row span:last-child  { font-weight: 600; }
+
+.btn-primary {
+  margin-top: 14px;
+  background: #1a237e;
+  color: white;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .9rem;
+  font-weight: 600;
+  transition: background .15s;
+}
+.btn-primary:hover { background: #283593; }
+
+/* ── Reservations list ── */
+.res-item.rooster-item { border-left-color: #1a237e; background: #f0f2ff; }
+.res-item {
+  border-left: 4px solid #ff9800;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: #fff8f0;
+  border-radius: 0 6px 6px 0;
+  font-size: .85rem;
+}
+.res-item .res-header { font-weight: 700; margin-bottom: 2px; }
+.res-item .res-sub    { color: #666; font-size: .78rem; }
+.res-item .res-delete {
+  float: right;
+  background: none;
+  border: none;
+  color: #f44336;
+  cursor: pointer;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+/* ── Modal ── */
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+#modal-overlay.hidden { display: none; }
+
+.modal {
+  background: white;
+  border-radius: 14px;
+  padding: 28px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+.modal h3 { margin-bottom: 18px; font-size: 1.05rem; color: #1a237e; }
+
+.modal label {
+  display: flex;
+  flex-direction: column;
+  font-size: .82rem;
+  color: #555;
+  font-weight: 600;
+  margin-bottom: 12px;
+  gap: 4px;
+}
+.modal input {
+  padding: 8px 10px;
+  border: 1.5px solid #ccc;
+  border-radius: 7px;
+  font-size: .9rem;
+  outline: none;
+  transition: border-color .15s;
+}
+.modal input:focus { border-color: #1a237e; }
+
+.modal-actions { display: flex; gap: 10px; margin-top: 8px; justify-content: flex-end; }
+.modal-actions button:first-child {
+  background: #eee;
+  color: #333;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .9rem;
+}
