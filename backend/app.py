@@ -205,6 +205,67 @@ def clear_rooster():
     return jsonify({'ok': True})
 
 
+# ── Admin data viewer (login required) ───────────────────────────────
+@app.route('/admin')
+def admin_page():
+    user = get_user_from_token()
+
+    # Token can also be passed as ?token=... in the URL for easy browser access
+    if not user:
+        token = request.args.get('token', '')
+        if token:
+            with get_db() as db:
+                row = db.execute('SELECT username FROM sessions WHERE token=?', (token,)).fetchone()
+            user = row['username'] if row else None
+
+    if not user:
+        return '''
+        <html><head><title>Admin login</title>
+        <style>body{font-family:sans-serif;max-width:380px;margin:80px auto;padding:20px}
+        input{display:block;width:100%;padding:8px;margin:8px 0;box-sizing:border-box}
+        button{background:#1a237e;color:white;border:none;padding:10px 20px;cursor:pointer;width:100%}
+        .err{color:red;font-size:.85rem}</style></head>
+        <body><h2>🔒 Admin – inloggen</h2>
+        <form method="GET" action="/admin">
+          <input name="token" placeholder="Plak hier je login-token" required/>
+          <button type="submit">Bekijk data</button>
+        </form>
+        <p class="err">Token vind je in de browser console na inloggen op de website:<br>
+        <code>localStorage.getItem('auth_token')</code></p>
+        </body></html>''', 401
+
+    with get_db() as db:
+        reservations = db.execute(
+            'SELECT * FROM reservations ORDER BY datum, van'
+        ).fetchall()
+        rooster = db.execute(
+            'SELECT * FROM rooster ORDER BY datum, van'
+        ).fetchall()
+
+    def table_html(rows, title):
+        if not rows:
+            return f'<h3>{title}</h3><p style="color:#888">Geen data.</p>'
+        headers = rows[0].keys()
+        html = f'<h3>{title} ({len(rows)} rijen)</h3><div style="overflow-x:auto"><table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:.85rem;width:100%">'
+        html += '<tr>' + ''.join(f'<th style="background:#e8eaf6;color:#1a237e">{h}</th>' for h in headers) + '</tr>'
+        for row in rows:
+            html += '<tr>' + ''.join(f'<td>{v or ""}</td>' for v in row) + '</tr>'
+        html += '</table></div>'
+        return html
+
+    return f'''
+    <html><head><title>Admin – data</title>
+    <style>body{{font-family:sans-serif;max-width:1100px;margin:30px auto;padding:20px}}
+    h2{{color:#1a237e}} h3{{margin-top:32px;color:#333}}</style></head>
+    <body>
+    <h2>📊 Database overzicht – ingelogd als <em>{user}</em></h2>
+    {table_html(reservations, "Reserveringen")}
+    {table_html(rooster, "Rooster")}
+    <p style="margin-top:32px;color:#aaa;font-size:.8rem">
+      Vernieuw de pagina voor de laatste data.</p>
+    </body></html>'''
+
+
 # ── Serve frontend ────────────────────────────────────────────────────
 @app.route('/')
 @app.route('/<path:path>')
