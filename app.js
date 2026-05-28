@@ -687,7 +687,14 @@ function setupOverlays() {
     el.style.width  = (r.w / W * 100) + '%';
     el.style.height = (r.h / H * 100) + '%';
   });
-  if (window.innerWidth <= 768) zoomToRooms();
+  if (window.innerWidth <= 768) {
+    // Shrink wrapper to actual image height — removes gray space below map
+    const rawDispW = zoomWrapper.offsetWidth || window.innerWidth - 72;
+    const imgH = Math.round(rawDispW * H / W);
+    zoomWrapper.style.height = Math.max(200, imgH) + 'px';
+    // Zoom after layout has fully settled
+    requestAnimationFrame(() => setTimeout(zoomToRooms, 80));
+  }
 }
 
 function zoomToRooms() {
@@ -695,7 +702,15 @@ function zoomToRooms() {
   if (!img?.naturalWidth) return;
   const W = img.naturalWidth, H = img.naturalHeight;
 
-  // Bounding box around all 5 rooms in natural pixels
+  // If layout not ready yet, retry
+  const dispW = fpContainer.offsetWidth;
+  if (!dispW) { setTimeout(zoomToRooms, 80); return; }
+  const dispH = dispW * H / W;   // calculated from aspect ratio — never reads offsetHeight
+
+  const vw = zoomWrapper.offsetWidth;
+  const vh = zoomWrapper.offsetHeight;
+
+  // Bounding box of all 5 rooms in natural pixels
   const coords = Object.values(ROOM_COORDS);
   const x0 = Math.min(...coords.map(r => r.x));
   const y0 = Math.min(...coords.map(r => r.y));
@@ -704,23 +719,22 @@ function zoomToRooms() {
   const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
   const cw = x1 - x0,       ch = y1 - y0;
 
-  // Display size of image at scale=1
-  const dispW = fpContainer.offsetWidth;
-  const dispH = dispW * H / W;
-
-  // Scale so cluster fills ~80% of the viewport
+  // Scale so cluster fills ~85% of whichever axis is tighter
   const newScale = Math.min(
-    (zoomWrapper.offsetWidth  * 0.80) / (cw / W * dispW),
-    (zoomWrapper.offsetHeight * 0.80) / (ch / H * dispH),
+    (vw * 0.85) / (cw / W * dispW),
+    (vh * 0.85) / (ch / H * dispH),
     MAX_SCALE
   );
   scale = Math.max(MIN_SCALE, newScale);
 
   // Pan to center the cluster
-  panX = zoomWrapper.offsetWidth  / 2 - (cx / W * dispW) * scale;
-  panY = zoomWrapper.offsetHeight / 2 - (cy / H * dispH) * scale;
+  panX = vw / 2 - (cx / W * dispW) * scale;
+  panY = vh / 2 - (cy / H * dispH) * scale;
 
-  constrainPan();
+  // Clamp using calculated content size (avoids stale offsetHeight)
+  panX = Math.min(0, Math.max(panX, vw - dispW * scale));
+  panY = Math.min(0, Math.max(panY, vh - dispH * scale));
+
   applyTransform();
 }
 
