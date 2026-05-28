@@ -688,12 +688,8 @@ function setupOverlays() {
     el.style.height = (r.h / H * 100) + '%';
   });
   if (window.innerWidth <= 768) {
-    // Shrink wrapper to actual image height — removes gray space below map
-    const rawDispW = zoomWrapper.offsetWidth || window.innerWidth - 72;
-    const imgH = Math.round(rawDispW * H / W);
-    zoomWrapper.style.height = Math.max(200, imgH) + 'px';
-    // Zoom after layout has fully settled
-    requestAnimationFrame(() => setTimeout(zoomToRooms, 80));
+    // Fire at 4 increasing delays — whichever fires when layout is ready wins
+    [100, 300, 600, 1200].forEach(d => setTimeout(zoomToRooms, d));
   }
 }
 
@@ -702,13 +698,14 @@ function zoomToRooms() {
   if (!img?.naturalWidth) return;
   const W = img.naturalWidth, H = img.naturalHeight;
 
-  // If layout not ready yet, retry
-  const dispW = fpContainer.offsetWidth;
-  if (!dispW) { setTimeout(zoomToRooms, 80); return; }
-  const dispH = dispW * H / W;   // calculated from aspect ratio — never reads offsetHeight
+  // Use fp-container width, fall back to zoom-wrapper width (Android Chrome
+  // sometimes returns 0 for offsetWidth on position:absolute children)
+  const dispW = fpContainer.offsetWidth || zoomWrapper.offsetWidth || (window.innerWidth - 72);
+  if (!dispW) return;
+  const dispH = dispW * H / W;
 
-  const vw = zoomWrapper.offsetWidth;
-  const vh = zoomWrapper.offsetHeight;
+  const vw = zoomWrapper.offsetWidth || dispW;
+  const vh = zoomWrapper.offsetHeight || 300;
 
   // Bounding box of all 5 rooms in natural pixels
   const coords = Object.values(ROOM_COORDS);
@@ -731,7 +728,7 @@ function zoomToRooms() {
   panX = vw / 2 - (cx / W * dispW) * scale;
   panY = vh / 2 - (cy / H * dispH) * scale;
 
-  // Clamp using calculated content size (avoids stale offsetHeight)
+  // Clamp using calculated content size
   panX = Math.min(0, Math.max(panX, vw - dispW * scale));
   panY = Math.min(0, Math.max(panY, vh - dispH * scale));
 
