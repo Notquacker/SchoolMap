@@ -687,13 +687,49 @@ function setupOverlays() {
     el.style.width  = (r.w / W * 100) + '%';
     el.style.height = (r.h / H * 100) + '%';
   });
+  if (window.innerWidth <= 768) zoomToRooms();
 }
+
+function zoomToRooms() {
+  const img = document.getElementById('fp-img');
+  if (!img?.naturalWidth) return;
+  const W = img.naturalWidth, H = img.naturalHeight;
+
+  // Bounding box around all 5 rooms in natural pixels
+  const coords = Object.values(ROOM_COORDS);
+  const x0 = Math.min(...coords.map(r => r.x));
+  const y0 = Math.min(...coords.map(r => r.y));
+  const x1 = Math.max(...coords.map(r => r.x + r.w));
+  const y1 = Math.max(...coords.map(r => r.y + r.h));
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const cw = x1 - x0,       ch = y1 - y0;
+
+  // Display size of image at scale=1
+  const dispW = fpContainer.offsetWidth;
+  const dispH = dispW * H / W;
+
+  // Scale so cluster fills ~80% of the viewport
+  const newScale = Math.min(
+    (zoomWrapper.offsetWidth  * 0.80) / (cw / W * dispW),
+    (zoomWrapper.offsetHeight * 0.80) / (ch / H * dispH),
+    MAX_SCALE
+  );
+  scale = Math.max(MIN_SCALE, newScale);
+
+  // Pan to center the cluster
+  panX = zoomWrapper.offsetWidth  / 2 - (cx / W * dispW) * scale;
+  panY = zoomWrapper.offsetHeight / 2 - (cy / H * dispH) * scale;
+
+  constrainPan();
+  applyTransform();
+}
+
 const fpImg = document.getElementById('fp-img');
 fpImg?.addEventListener('load', setupOverlays);
 if (fpImg?.complete && fpImg.naturalWidth) setupOverlays();
 window.addEventListener('load', setupOverlays);
 window.addEventListener('resize', setupOverlays);
-setTimeout(setupOverlays, 1000);  // fallback for slow mobile loads
+setTimeout(setupOverlays, 1000);
 
 
 // ══════════════════════════════════════════════════════════════════════
