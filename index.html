@@ -18,17 +18,25 @@
     </div>
     <div class="header-right">
       <div id="clock"></div>
-      <div id="mqtt-status" class="mqtt-badge disconnected">MQTT: verbinden…</div>
+      <button id="burger-btn" onclick="toggleMenu()" aria-label="Menu">☰</button>
     </div>
   </header>
 
-  <main>
+  <!-- ── Sidebar ─────────────────────────────────────────────────── -->
+  <div id="sidebar-overlay" onclick="closeMenu()"></div>
+  <nav id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Menu</span>
+      <button class="sidebar-close" onclick="closeMenu()">✕</button>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a class="sidebar-nav-link active" data-tab="plattegrond" href="#" onclick="switchTab('plattegrond'); closeMenu(); return false;">🗺 Plattegrond</a></li>
+      <li><a class="sidebar-nav-link" data-tab="rooster"     href="#" onclick="switchTab('rooster');     closeMenu(); return false;">📅 Rooster uploaden</a></li>
+      <li><a class="sidebar-nav-link" data-tab="admin"       href="#" onclick="switchTab('admin');       closeMenu(); return false;">⚙ Admin</a></li>
+    </ul>
+  </nav>
 
-    <!-- ═══ TAB NAVIGATIE ═══ -->
-    <nav class="tab-nav">
-      <button class="tab-btn active" onclick="switchTab('plattegrond')">🗺 Plattegrond</button>
-      <button class="tab-btn"        onclick="switchTab('rooster')">📅 Rooster uploaden</button>
-    </nav>
+  <main>
 
     <!-- ═══ TAB 1: PLATTEGROND ═══ -->
     <div id="tab-plattegrond" class="tab-content">
@@ -180,6 +188,108 @@
       </div><!-- /rooster-authenticated -->
 
     </div><!-- /tab-rooster -->
+
+    <!-- ═══ TAB 3: ADMIN ═══ -->
+    <div id="tab-admin" class="tab-content" style="display:none">
+
+      <!-- LOGIN -->
+      <div id="admin-login" class="login-card">
+        <div class="login-icon">⚙</div>
+        <h3>Inloggen vereist</h3>
+        <p>Alleen beheerders kunnen de admin-pagina bekijken.</p>
+        <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+          <label>Gebruikersnaam
+            <input type="text" id="admin-login-user" required autocomplete="username" placeholder="admin"/>
+          </label>
+          <label>Wachtwoord
+            <input type="password" id="admin-login-pass" required autocomplete="current-password" placeholder="••••••••"/>
+          </label>
+          <div id="admin-login-error" class="login-error"></div>
+          <button type="submit" class="btn-primary" id="admin-login-btn">Inloggen</button>
+        </form>
+      </div>
+
+      <!-- INHOUD NA INLOGGEN -->
+      <div id="admin-authenticated" style="display:none">
+
+        <div class="user-bar">
+          <span>Ingelogd als <strong id="admin-username"></strong></span>
+          <button class="btn-outline" onclick="handleLogout()">Uitloggen</button>
+        </div>
+
+        <!-- Verbindingsstatus -->
+        <div class="admin-section">
+          <h2>Verbindingsstatus</h2>
+          <div class="status-cards">
+            <div class="status-card">
+              <div class="status-dot connecting" id="mqtt-dot">●</div>
+              <div>
+                <div class="status-card-label">MQTT Broker</div>
+                <div class="status-card-text" id="mqtt-status-text">Verbinden…</div>
+              </div>
+            </div>
+            <div class="status-card">
+              <div class="status-dot connecting" id="api-dot">●</div>
+              <div>
+                <div class="status-card-label">Backend API</div>
+                <div class="status-card-text" id="api-status-text">Controleren…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reserveringen beheren -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <h2>Reserveringen beheren</h2>
+            <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+              <label style="font-size:.8rem;font-weight:600;color:#555;display:flex;flex-direction:column;gap:3px">
+                Toevoegen voor lokaal
+                <select id="admin-new-room" style="padding:6px 8px;border:1.5px solid #ccc;border-radius:6px;font-size:.85rem">
+                  <option value="">-- Kies lokaal --</option>
+                  <option value="144">L01.144</option>
+                  <option value="149">L01.149</option>
+                  <option value="239">L01.239</option>
+                  <option value="243">L01.243</option>
+                  <option value="249">L01.249</option>
+                </select>
+              </label>
+              <button class="btn-primary" style="margin-top:0" onclick="adminNewReservation()">+ Toevoegen</button>
+            </div>
+          </div>
+
+          <div class="rooster-filters" style="margin-bottom:16px">
+            <label>Datum
+              <input type="date" id="admin-filter-date" oninput="renderAdminReservations()"/>
+            </label>
+            <label>Lokaal
+              <select id="admin-filter-room" onchange="renderAdminReservations()">
+                <option value="">Alle lokalen</option>
+                <option value="144">L01.144</option>
+                <option value="149">L01.149</option>
+                <option value="239">L01.239</option>
+                <option value="243">L01.243</option>
+                <option value="249">L01.249</option>
+              </select>
+            </label>
+            <button class="btn-outline" onclick="loadAllReservations()">Vernieuwen</button>
+          </div>
+
+          <div class="table-scroll">
+            <table class="rooster-table">
+              <thead>
+                <tr>
+                  <th>Lokaal</th><th>Naam</th><th>Datum</th><th>Van</th><th>Tot</th><th>Doel</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="admin-res-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /admin-authenticated -->
+
+    </div><!-- /tab-admin -->
 
   </main>
 

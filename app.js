@@ -77,22 +77,22 @@ async function checkAuth() {
   } catch { updateAuthUI(false); }
 }
 
-async function handleLogin(e) {
+async function handleLoginForm(e, prefix) {
   e.preventDefault();
-  const btn = document.getElementById('login-btn');
-  const err = document.getElementById('login-error');
+  const btn = document.getElementById(prefix + 'btn');
+  const err = document.getElementById(prefix + 'error');
   btn.textContent = 'Bezig…'; btn.disabled = true; err.textContent = '';
   try {
     const data = await API.post('/api/login', {
-      username: document.getElementById('login-user').value,
-      password: document.getElementById('login-pass').value,
+      username: document.getElementById(prefix + 'user').value,
+      password: document.getElementById(prefix + 'pass').value,
     });
     if (data.ok) {
       authToken   = data.token;
       currentUser = data.username;
       localStorage.setItem('auth_token', authToken);
       updateAuthUI(true);
-      document.getElementById('login-pass').value = '';
+      document.getElementById(prefix + 'pass').value = '';
     } else {
       err.textContent = data.error || 'Inloggen mislukt.';
     }
@@ -101,6 +101,9 @@ async function handleLogin(e) {
   }
   btn.textContent = 'Inloggen'; btn.disabled = false;
 }
+
+function handleLogin(e)      { handleLoginForm(e, 'login-'); }
+function handleAdminLogin(e) { handleLoginForm(e, 'admin-login-'); }
 
 async function handleLogout() {
   await API.post('/api/logout', {}).catch(() => {});
@@ -112,8 +115,13 @@ async function handleLogout() {
 function updateAuthUI(loggedIn) {
   document.getElementById('rooster-login').style.display         = loggedIn ? 'none'  : 'block';
   document.getElementById('rooster-authenticated').style.display = loggedIn ? 'block' : 'none';
-  const nameEl = document.getElementById('rooster-username');
-  if (nameEl) nameEl.textContent = currentUser || '';
+  document.getElementById('admin-login').style.display           = loggedIn ? 'none'  : 'block';
+  document.getElementById('admin-authenticated').style.display   = loggedIn ? 'block' : 'none';
+  ['rooster-username', 'admin-username'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = currentUser || '';
+  });
+  if (loggedIn) loadAllReservations();
 }
 
 
@@ -122,9 +130,21 @@ function updateAuthUI(loggedIn) {
 // ══════════════════════════════════════════════════════════════════════
 function switchTab(name) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.getElementById('tab-' + name).style.display = 'block';
-  document.querySelector(`.tab-btn[onclick="switchTab('${name}')"]`).classList.add('active');
+  document.querySelectorAll('.sidebar-nav-link').forEach(a => a.classList.remove('active'));
+  const link = document.querySelector(`.sidebar-nav-link[data-tab="${name}"]`);
+  if (link) link.classList.add('active');
+  if (name === 'admin' && currentUser) loadAllReservations();
+}
+
+function toggleMenu() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+
+function closeMenu() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
 }
 
 
@@ -144,10 +164,15 @@ updateClock();
 // ══════════════════════════════════════════════════════════════════════
 let mqttClient = null;
 
+function updateMqttStatus(state, text) {
+  const dot    = document.getElementById('mqtt-dot');
+  const textEl = document.getElementById('mqtt-status-text');
+  if (dot)    { dot.className = 'status-dot ' + state; }
+  if (textEl) { textEl.textContent = text; }
+}
+
 function connectMqtt() {
-  const badge = document.getElementById('mqtt-status');
-  badge.textContent = 'MQTT: verbinden…';
-  badge.className   = 'mqtt-badge connecting';
+  updateMqttStatus('connecting', 'Verbinden…');
   try {
     mqttClient = mqtt.connect(MQTT_BROKER, {
       clientId: 'webdashboard_' + Math.random().toString(16).slice(2, 8),
@@ -155,25 +180,24 @@ function connectMqtt() {
       clean: true, connectTimeout: 8000, reconnectPeriod: 5000,
     });
     mqttClient.on('connect', () => {
-      badge.textContent = 'MQTT: verbonden'; badge.className = 'mqtt-badge connected';
+      updateMqttStatus('connected', 'Verbonden');
       ['243','249'].forEach(id => mqttClient.subscribe(MQTT_TOPIC_BASE + id + '/status'));
     });
-    mqttClient.on('error',   () => { badge.textContent = 'MQTT: fout';    badge.className = 'mqtt-badge disconnected'; });
-    mqttClient.on('offline', () => { badge.textContent = 'MQTT: offline'; badge.className = 'mqtt-badge disconnected'; });
+    mqttClient.on('error',   () => updateMqttStatus('disconnected', 'Fout'));
+    mqttClient.on('offline', () => updateMqttStatus('disconnected', 'Offline'));
     mqttClient.on('message', (topic, message) => {
-      // topic: school/lokaalbezetting/249/status  → index 2 = roomId
       const roomId = topic.split('/')[2];
       const txt    = message.toString().trim().toLowerCase();
       let bezet;
       try {
-        bezet = JSON.parse(txt).bezet;          // {"bezet":true}
+        bezet = JSON.parse(txt).bezet;
       } catch {
         bezet = txt === 'true' || txt === '1' || txt === 'bezet';
       }
       setRoomStatus(roomId, bezet ? 'bezet' : 'vrij');
     });
   } catch {
-    badge.textContent = 'MQTT: niet beschikbaar'; badge.className = 'mqtt-badge disconnected';
+    updateMqttStatus('disconnected', 'Niet beschikbaar');
   }
 }
 
@@ -321,6 +345,7 @@ function renderReservationsList() {
 async function deleteReservation(id) {
   await API.delete(`/api/reservations/${id}`);
   await refreshCache();
+  if (currentUser) loadAllReservations();
 }
 
 function openModal(roomId) {
@@ -350,6 +375,7 @@ async function submitReservation(e, roomId) {
   });
   closeModal();
   await refreshCache();
+  if (currentUser) loadAllReservations();
 }
 
 
@@ -499,6 +525,79 @@ function downloadTemplate() {
 
 
 // ══════════════════════════════════════════════════════════════════════
+// ADMIN – CONNECTION STATUS
+// ══════════════════════════════════════════════════════════════════════
+async function checkApiStatus() {
+  const dot    = document.getElementById('api-dot');
+  const textEl = document.getElementById('api-status-text');
+  try {
+    const r = await fetch(API_BASE + '/api/auth/check');
+    if (r.ok) {
+      if (dot)    dot.className = 'status-dot connected';
+      if (textEl) textEl.textContent = 'Online';
+    } else {
+      if (dot)    dot.className = 'status-dot disconnected';
+      if (textEl) textEl.textContent = 'Fout (HTTP ' + r.status + ')';
+    }
+  } catch {
+    if (dot)    dot.className = 'status-dot disconnected';
+    if (textEl) textEl.textContent = 'Niet bereikbaar';
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════
+// ADMIN – RESERVERINGEN BEHEREN
+// ══════════════════════════════════════════════════════════════════════
+let allReservations = [];
+
+async function loadAllReservations() {
+  try {
+    allReservations = await API.get('/api/reservations');
+  } catch { allReservations = []; }
+  renderAdminReservations();
+}
+
+function renderAdminReservations() {
+  const filterDate = document.getElementById('admin-filter-date')?.value || '';
+  const filterRoom = document.getElementById('admin-filter-room')?.value || '';
+
+  let list = allReservations;
+  if (filterDate) list = list.filter(r => r.datum === filterDate);
+  if (filterRoom) list = list.filter(r => (r.room_id || r.roomId) === filterRoom);
+  list = [...list].sort((a,b) => a.datum.localeCompare(b.datum) || a.van.localeCompare(b.van));
+
+  const tbody = document.getElementById('admin-res-tbody');
+  if (!tbody) return;
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">Geen reserveringen gevonden.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(r => `
+    <tr>
+      <td><strong>${ROOMS[r.room_id || r.roomId]?.label ?? 'L01.' + (r.room_id || r.roomId)}</strong></td>
+      <td>${r.naam || ''}</td>
+      <td>${r.datum}</td><td>${r.van}</td><td>${r.tot}</td>
+      <td>${r.doel || ''}</td>
+      <td><button class="del-btn" onclick="deleteAdminReservation('${r.id}')">✕</button></td>
+    </tr>`).join('');
+}
+
+async function deleteAdminReservation(id) {
+  await API.delete(`/api/reservations/${id}`);
+  await loadAllReservations();
+  await refreshCache();
+}
+
+function adminNewReservation() {
+  const roomId = document.getElementById('admin-new-room').value;
+  if (!roomId) { alert('Kies eerst een lokaal.'); return; }
+  openModal(roomId);
+}
+
+
+// ══════════════════════════════════════════════════════════════════════
 // PAN & ZOOM
 // ══════════════════════════════════════════════════════════════════════
 let scale = 1, panX = 0, panY = 0;
@@ -601,6 +700,8 @@ initRoomClasses();
 connectMqtt();
 checkAuth();
 refreshCache();
+checkApiStatus();
+setInterval(checkApiStatus, 30_000);
 
 // Rooster tab
 document.getElementById('rooster-filter-date').value = todayStr();

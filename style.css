@@ -9,7 +9,7 @@ body {
 
 /* ── Header ── */
 header {
-  background: #1a237e;
+  background: #c62828;
   color: white;
   padding: 14px 28px;
   display: flex;
@@ -505,4 +505,145 @@ h2 { font-size: 1rem; font-weight: 600; margin-bottom: 10px; color: #1a237e; }
   border-radius: 8px;
   cursor: pointer;
   font-size: .9rem;
+}
+
+/* ── Burger menu knop ── */
+#burger-btn {
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: white;
+  font-size: 1.4rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#burger-btn:hover { background: rgba(255,255,255,.28); }
+
+/* ── Sidebar overlay ── */
+#sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 199;
+  display: none;
+}
+#sidebar-overlay.open { display: block; }
+
+/* ── Sidebar navigatie ── */
+#sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 260px;
+  height: 100vh;
+  background: white;
+  z-index: 200;
+  box-shadow: -4px 0 20px rgba(0,0,0,.2);
+  transform: translateX(100%);
+  transition: transform .25s ease;
+  display: flex;
+  flex-direction: column;
+}
+#sidebar.open { transform: translateX(0); }
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background: #c62828;
+  color: white;
+}
+.sidebar-title { font-weight: 700; font-size: 1rem; }
+.sidebar-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background .1s;
+}
+.sidebar-close:hover { background: rgba(255,255,255,.15); }
+
+.sidebar-menu {
+  list-style: none;
+  padding: 10px 0;
+  flex: 1;
+}
+.sidebar-nav-link {
+  display: block;
+  padding: 14px 24px;
+  color: #333;
+  text-decoration: none;
+  font-size: .95rem;
+  font-weight: 600;
+  transition: background .15s, color .15s;
+  border-left: 4px solid transparent;
+}
+.sidebar-nav-link:hover  { background: #fde8e8; color: #c62828; }
+.sidebar-nav-link.active { background: #fde8e8; color: #c62828; border-left-color: #c62828; padding-left: 20px; }
+
+/* ── Admin tab ── */
+.admin-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  margin-bottom: 20px;
+}
+.admin-section > h2 { font-size: 1rem; font-weight: 700; color: #c62828; margin-bottom: 16px; }
+
+.admin-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.admin-section-header h2 { margin-bottom: 0; }
+
+.status-cards {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #f5f6fa;
+  border-radius: 10px;
+  padding: 14px 20px;
+  min-width: 200px;
+  flex: 1;
+}
+.status-dot {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.status-dot.connected    { color: #4caf50; }
+.status-dot.disconnected { color: #f44336; }
+.status-dot.connecting   { color: #ff9800; }
+
+.status-card-label {
+  font-size: .75rem;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 2px;
+}
+.status-card-text {
+  font-size: .9rem;
+  font-weight: 700;
+  color: #333;
 }
