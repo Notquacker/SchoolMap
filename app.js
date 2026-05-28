@@ -678,7 +678,7 @@ zoomWrapper.addEventListener('touchend', () => { isDragging = false; });
 function setupOverlays() {
   const img = document.getElementById('fp-img');
   const W = img.naturalWidth, H = img.naturalHeight;
-  if (!W || !H) return;
+  if (!W || !H) { setTimeout(setupOverlays, 80); return; }
   Object.entries(ROOM_COORDS).forEach(([id, r]) => {
     const el = document.getElementById('room-' + id);
     if (!el) return;
@@ -689,8 +689,10 @@ function setupOverlays() {
   });
 }
 const fpImg = document.getElementById('fp-img');
+fpImg?.addEventListener('load', setupOverlays);
 if (fpImg?.complete && fpImg.naturalWidth) setupOverlays();
-else fpImg?.addEventListener('load', setupOverlays);
+window.addEventListener('load', setupOverlays);
+window.addEventListener('resize', setupOverlays);
 
 
 // ══════════════════════════════════════════════════════════════════════
