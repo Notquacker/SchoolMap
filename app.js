@@ -693,6 +693,7 @@ fpImg?.addEventListener('load', setupOverlays);
 if (fpImg?.complete && fpImg.naturalWidth) setupOverlays();
 window.addEventListener('load', setupOverlays);
 window.addEventListener('resize', setupOverlays);
+setTimeout(setupOverlays, 1000);  // fallback for slow mobile loads
 
 
 // ══════════════════════════════════════════════════════════════════════
