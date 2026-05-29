@@ -774,3 +774,21 @@ body.dark .zoom-controls button { background: #252840; border-color: #3a3d55; co
 body.dark .zoom-controls button:hover { background: #2e3250; }
 body.dark .fp-legend .leg.sensor { background: rgba(200,200,200,.25); color: #bbb; }
 body.dark .login-error { color: #ef9a9a; }
+
+/* ── MQTT log ── */
+.mqtt-log-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 5px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: .8rem;
+  font-family: monospace;
+}
+.mqtt-log-row:last-child { border-bottom: none; }
+.mqtt-log-time    { color: #999; min-width: 72px; flex-shrink: 0; }
+.mqtt-log-topic   { color: #1a237e; flex: 1; word-break: break-all; }
+.mqtt-log-payload { font-weight: 700; color: #222; }
+body.dark .mqtt-log-row   { border-bottom-color: #252840; }
+body.dark .mqtt-log-topic { color: #90b8f8; }
+body.dark .mqtt-log-payload { color: #d0d4e0; }

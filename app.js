@@ -266,6 +266,26 @@ function updateMqttStatus(state, text) {
   if (textEl) { textEl.textContent = text; }
 }
 
+const mqttLog = [];
+function mqttLogAdd(topic, payload) {
+  const time = new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  mqttLog.unshift({ time, topic, payload });
+  if (mqttLog.length > 20) mqttLog.pop();
+  renderMqttLog();
+}
+function renderMqttLog() {
+  const el = document.getElementById('mqtt-log');
+  if (!el) return;
+  if (!mqttLog.length) { el.innerHTML = '<p class="hint">Nog geen berichten ontvangen.</p>'; return; }
+  el.innerHTML = mqttLog.map(m =>
+    `<div class="mqtt-log-row">
+       <span class="mqtt-log-time">${m.time}</span>
+       <span class="mqtt-log-topic">${m.topic}</span>
+       <span class="mqtt-log-payload">${m.payload}</span>
+     </div>`
+  ).join('');
+}
+
 function connectMqtt() {
   updateMqttStatus('connecting', 'Verbinden…');
   try {
@@ -276,16 +296,23 @@ function connectMqtt() {
     });
     mqttClient.on('connect', () => {
       updateMqttStatus('connected', 'Verbonden');
-      ['243','249'].forEach(id => mqttClient.subscribe(MQTT_TOPIC_BASE + id + '/status'));
+      mqttClient.subscribe(MQTT_TOPIC_BASE + '#');
     });
     mqttClient.on('error',   () => updateMqttStatus('disconnected', 'Fout'));
     mqttClient.on('offline', () => updateMqttStatus('disconnected', 'Offline'));
     mqttClient.on('message', (topic, message) => {
-      const roomId = topic.split('/')[2];
-      const txt    = message.toString().trim().toLowerCase();
+      const txt = message.toString().trim();
+      mqttLogAdd(topic, txt);
+
+      // Haal kamer-ID op: werkt voor school/lokaalbezetting/243, .../243/status, etc.
+      const parts  = topic.replace(MQTT_TOPIC_BASE, '').split('/');
+      const roomId = parts[0];
+      if (!ROOMS[roomId]) return;
+
+      const low = txt.toLowerCase();
       let bezet;
-      try { bezet = JSON.parse(txt).bezet; }
-      catch { bezet = txt === 'true' || txt === '1' || txt === 'bezet'; }
+      try { bezet = JSON.parse(low).bezet; }
+      catch { bezet = low === 'true' || low === '1' || low === 'bezet'; }
       setRoomStatus(roomId, bezet ? 'bezet' : 'vrij');
     });
   } catch {
