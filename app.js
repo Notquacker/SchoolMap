@@ -1,10 +1,7 @@
 // ── Backend URL ───────────────────────────────────────────────────────
-// Laat leeg ('') als Flask de frontend ook serveert (localhost:5000).
-// Vul de Render/Railway URL in als je frontend op GitHub Pages staat:
-//   const API_BASE = 'https://jouw-app.onrender.com';
 const API_BASE = '';
 
-// ── Kalibratie-coördinaten (in pixels van de originele afbeelding) ───
+// ── Kalibratie-coördinaten (pixels van de originele afbeelding) ──────
 const ROOM_COORDS = {
   '144': { x: 1313, y: 154,  w: 137, h:  93, rotate: -25 },
   '149': { x: 1439, y:  96,  w: 132, h:  94, rotate: -26 },
@@ -27,13 +24,39 @@ const MQTT_USER       = 'Xayan_website';
 const MQTT_PASS       = 'QWErty$123';
 const MQTT_TOPIC_BASE = 'school/lokaalbezetting/';
 
+// ── Verdieping-switcher ───────────────────────────────────────────────
+const FLOOR_IMAGES = {
+  '1e': 'plattegrond.png',
+  'bg': 'begane_grond.png',
+};
+let currentFloor = '1e';
+
+function switchFloor(floor) {
+  if (floor === currentFloor) return;
+  currentFloor = floor;
+  document.querySelectorAll('.floor-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.floor-btn[data-floor="${floor}"]`).classList.add('active');
+
+  const img = document.getElementById('fp-img');
+  img.src = FLOOR_IMAGES[floor];
+
+  // Overlays alleen op 1e verdieping (begane grond nog niet gekalibreerd)
+  const showOverlays = floor === '1e';
+  document.querySelectorAll('.room-overlay').forEach(el => {
+    el.style.display = showOverlays ? '' : 'none';
+  });
+
+  resetZoom();
+  img.addEventListener('load', () => setupOverlays(), { once: true });
+  if (img.complete && img.naturalWidth) setupOverlays();
+}
+
 // ── State ─────────────────────────────────────────────────────────────
 const roomStatus = { '144':'vrij', '149':'vrij', '239':'vrij', '243':'vrij', '249':'vrij' };
 let selectedRoom  = null;
 let currentUser   = null;
 let authToken     = localStorage.getItem('auth_token') || null;
 
-// Local cache of today's data (refreshed from API)
 let todayReservations = [];
 let todayRooster      = [];
 
@@ -189,11 +212,8 @@ function connectMqtt() {
       const roomId = topic.split('/')[2];
       const txt    = message.toString().trim().toLowerCase();
       let bezet;
-      try {
-        bezet = JSON.parse(txt).bezet;
-      } catch {
-        bezet = txt === 'true' || txt === '1' || txt === 'bezet';
-      }
+      try { bezet = JSON.parse(txt).bezet; }
+      catch { bezet = txt === 'true' || txt === '1' || txt === 'bezet'; }
       setRoomStatus(roomId, bezet ? 'bezet' : 'vrij');
     });
   } catch {
@@ -225,7 +245,7 @@ function initRoomClasses() {
 function refreshAllStatuses() {
   const hhmm = new Date().toTimeString().slice(0, 5);
   Object.keys(ROOMS).forEach(id => {
-    if (roomStatus[id] === 'bezet') return; // sensor overrides
+    if (roomStatus[id] === 'bezet') return;
     const hasRes = todayReservations.some(r =>
       (r.room_id || r.roomId) === id && r.van <= hhmm && r.tot > hhmm);
     const hasRoo = todayRooster.some(r =>
@@ -236,7 +256,7 @@ function refreshAllStatuses() {
 
 
 // ══════════════════════════════════════════════════════════════════════
-// DATA LAYER  (API calls + cache)
+// DATA LAYER
 // ══════════════════════════════════════════════════════════════════════
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
@@ -246,13 +266,12 @@ async function refreshCache() {
       API.get(`/api/reservations?datum=${todayStr()}`),
       API.get(`/api/rooster?datum=${todayStr()}`),
     ]);
-  } catch { /* offline — keep existing cache */ }
+  } catch { /* offline */ }
   refreshAllStatuses();
   renderReservationsList();
   if (selectedRoom) renderDetail(selectedRoom);
 }
 
-// Refresh every 60 seconds
 setInterval(refreshCache, 60_000);
 
 
@@ -288,7 +307,7 @@ function renderDetail(roomId) {
     <span class="detail-status ${statusClass[status]}">${statusMap[status]}</span>
     <div class="detail-row"><span>Capaciteit</span><span>${room.cap} studenten</span></div>
     <div class="detail-row"><span>Oppervlak</span><span>${room.area} m²</span></div>
-    <div class="detail-row"><span>Live sensor</span><span>${room.sensor ? '✅ Ja' : '❌ Nee'}</span></div>`;
+    <div class="detail-row"><span>Live sensor</span><span>${room.sensor ? 'Ja' : 'Nee'}</span></div>`;
 
   if (curRoo) html += `<div class="detail-row"><span>Ingeroosterd</span><span>${curRoo.groep} · ${curRoo.van}–${curRoo.tot}</span></div>`;
   if (curRes) html += `<div class="detail-row"><span>Gereserveerd</span><span>${curRes.naam} · ${curRes.van}–${curRes.tot}</span></div>`;
@@ -296,7 +315,7 @@ function renderDetail(roomId) {
   html += `<button class="btn-primary" onclick="openModal('${roomId}')">+ Reserveer dit lokaal</button>`;
 
   const combined = [
-    ...todayRooForRoom.map(r => ({ van: r.van, tot: r.tot, label: `📅 ${r.groep || '–'} · ${r.vak || '–'}`, id: r.id, type:'roo' })),
+    ...todayRooForRoom.map(r => ({ van: r.van, tot: r.tot, label: `${r.groep || '–'} · ${r.vak || '–'}`, id: r.id, type:'roo' })),
     ...todayResForRoom.map(r => ({ van: r.van, tot: r.tot, label: `${r.naam}${r.doel ? ' · ' + r.doel : ''}`, id: r.id, type:'res' })),
   ].sort((a,b) => a.van.localeCompare(b.van));
 
@@ -337,7 +356,7 @@ function renderReservationsList() {
   el.innerHTML = list.map(r => `
     <div class="res-item ${r.type === 'roo' ? 'rooster-item' : ''}">
       <button class="res-delete" onclick="${r.type === 'roo' ? 'deleteRoosterEntry' : 'deleteReservation'}('${r.id}')">✕</button>
-      <div class="res-header">${r.type === 'roo' ? '📅 ' : ''}${r.van}–${r.tot}</div>
+      <div class="res-header">${r.van}–${r.tot}</div>
       <div class="res-sub">${r.label}</div>
     </div>`).join('');
 }
@@ -428,7 +447,7 @@ function parseCSV(text) {
 function handleFile(file) {
   if (!file) return;
   const fb  = document.getElementById('upload-feedback');
-  fb.textContent = '⏳ Bestand verwerken…'; fb.className = '';
+  fb.textContent = 'Bestand verwerken…'; fb.className = '';
   const ext = file.name.split('.').pop().toLowerCase();
 
   if (ext === 'csv') {
@@ -444,24 +463,24 @@ function handleFile(file) {
     };
     reader.readAsArrayBuffer(file);
   } else {
-    fb.textContent = '❌ Gebruik CSV of Excel (.xlsx).'; fb.className = 'err';
+    fb.textContent = 'Gebruik CSV of Excel (.xlsx).'; fb.className = 'err';
   }
 }
 
 async function finishUpload(entries, filename) {
   const fb = document.getElementById('upload-feedback');
   if (!entries.length) {
-    fb.textContent = `❌ Geen geldige regels gevonden in "${filename}". Controleer kolomnamen.`;
+    fb.textContent = `Geen geldige regels gevonden in "${filename}". Controleer kolomnamen.`;
     fb.className = 'err'; return;
   }
   const result = await API.post('/api/rooster', entries);
   if (result.ok) {
-    fb.textContent = `✅ ${result.count} roosterregel(s) opgeslagen uit "${filename}".`;
+    fb.textContent = `${result.count} roosterregel(s) opgeslagen uit "${filename}".`;
     fb.className = 'ok';
     renderRoosterTable();
     refreshCache();
   } else {
-    fb.textContent = `❌ Fout: ${result.error || 'onbekend'}`;
+    fb.textContent = `Fout: ${result.error || 'onbekend'}`;
     fb.className = 'err';
   }
 }
@@ -474,19 +493,18 @@ async function renderRoosterTable() {
   if (filterDate) url += `datum=${filterDate}&`;
   if (filterRoom) url += `room_id=${filterRoom}&`;
 
-  const list = await API.get(url).catch(() => []);
+  const list  = await API.get(url).catch(() => []);
+  const total = await API.get('/api/rooster?').catch(() => []);
 
   const wrapper = document.getElementById('rooster-table-wrapper');
   const badge   = document.getElementById('rooster-count-badge');
   const tbody   = document.getElementById('rooster-tbody');
 
-  // Get total count for badge
-  const total = await API.get('/api/rooster?').catch(() => []);
   if (total.length === 0) { wrapper.style.display = 'none'; return; }
   wrapper.style.display = 'block';
   if (badge) badge.textContent = total.length;
-
   if (!tbody) return;
+
   tbody.innerHTML = list.length === 0
     ? `<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">Geen resultaten voor deze filter</td></tr>`
     : list.map(r => `
@@ -525,7 +543,7 @@ function downloadTemplate() {
 
 
 // ══════════════════════════════════════════════════════════════════════
-// ADMIN – CONNECTION STATUS
+// ADMIN – VERBINDINGSSTATUS
 // ══════════════════════════════════════════════════════════════════════
 async function checkApiStatus() {
   const dot    = document.getElementById('api-dot');
@@ -610,7 +628,7 @@ const fpContainer = document.getElementById('fp-container');
 
 function applyTransform() {
   fpContainer.style.transform = `translate(${panX}px,${panY}px) scale(${scale})`;
-  // Houd badge-tekst visueel altijd ~9px, ongeacht zoom-niveau
+  // Badges visueel altijd ~9px, ongeacht zoom
   const fs = +(9 / scale).toFixed(2);
   const p1 = +(1 / scale).toFixed(2);
   const p2 = +(4 / scale).toFixed(2);
@@ -619,6 +637,7 @@ function applyTransform() {
     b.style.padding  = `${p1}px ${p2}px`;
   });
 }
+
 function constrainPan() {
   panX = Math.min(0, Math.max(panX, zoomWrapper.offsetWidth  - fpContainer.offsetWidth  * scale));
   panY = Math.min(0, Math.max(panY, zoomWrapper.offsetHeight - fpContainer.offsetHeight * scale));
@@ -687,7 +706,9 @@ function setupOverlays() {
   const img = document.getElementById('fp-img');
   const W = img.naturalWidth, H = img.naturalHeight;
   if (!W || !H) { setTimeout(setupOverlays, 80); return; }
-  Object.entries(ROOM_COORDS).forEach(([id, r]) => {
+
+  const coords = currentFloor === '1e' ? ROOM_COORDS : {};
+  Object.entries(coords).forEach(([id, r]) => {
     const el = document.getElementById('room-' + id);
     if (!el) return;
     el.style.left      = (r.x / W * 100) + '%';
@@ -696,19 +717,18 @@ function setupOverlays() {
     el.style.height    = (r.h / H * 100) + '%';
     el.style.transform = `rotate(${r.rotate || 0}deg)`;
   });
-  if (window.innerWidth <= 768) {
-    // Fire at 4 increasing delays — whichever fires when layout is ready wins
+
+  if (window.innerWidth <= 768 && currentFloor === '1e') {
     [100, 300, 600, 1200].forEach(d => setTimeout(zoomToRooms, d));
   }
 }
 
 function zoomToRooms() {
+  if (currentFloor !== '1e') return;
   const img = document.getElementById('fp-img');
   if (!img?.naturalWidth) return;
   const W = img.naturalWidth, H = img.naturalHeight;
 
-  // Use fp-container width, fall back to zoom-wrapper width (Android Chrome
-  // sometimes returns 0 for offsetWidth on position:absolute children)
   const dispW = fpContainer.offsetWidth || zoomWrapper.offsetWidth || (window.innerWidth - 72);
   if (!dispW) return;
   const dispH = dispW * H / W;
@@ -716,7 +736,6 @@ function zoomToRooms() {
   const vw = zoomWrapper.offsetWidth || dispW;
   const vh = zoomWrapper.offsetHeight || 300;
 
-  // Bounding box of all 5 rooms in natural pixels
   const coords = Object.values(ROOM_COORDS);
   const x0 = Math.min(...coords.map(r => r.x));
   const y0 = Math.min(...coords.map(r => r.y));
@@ -725,7 +744,6 @@ function zoomToRooms() {
   const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
   const cw = x1 - x0,       ch = y1 - y0;
 
-  // Scale so cluster fills ~85% of whichever axis is tighter
   const newScale = Math.min(
     (vw * 0.85) / (cw / W * dispW),
     (vh * 0.85) / (ch / H * dispH),
@@ -733,11 +751,9 @@ function zoomToRooms() {
   );
   scale = Math.max(MIN_SCALE, newScale);
 
-  // Pan to center the cluster
   panX = vw / 2 - (cx / W * dispW) * scale;
   panY = vh / 2 - (cy / H * dispH) * scale;
 
-  // Clamp using calculated content size
   panX = Math.min(0, Math.max(panX, vw - dispW * scale));
   panY = Math.min(0, Math.max(panY, vh - dispH * scale));
 
@@ -757,11 +773,11 @@ setTimeout(setupOverlays, 1000);
 // ══════════════════════════════════════════════════════════════════════
 initRoomClasses();
 
-// Kortere labels op mobiel: "144" i.p.v. "L01.144"
+// Kortere labels op mobiel
 if (window.innerWidth <= 768) {
   Object.keys(ROOMS).forEach(id => {
     const badge = document.querySelector(`#room-${id} .room-badge`);
-    if (badge) badge.textContent = ROOMS[id].sensor ? `${id} 📡` : id;
+    if (badge) badge.textContent = id;
   });
 }
 
@@ -771,7 +787,6 @@ refreshCache();
 checkApiStatus();
 setInterval(checkApiStatus, 30_000);
 
-// Rooster tab
 document.getElementById('rooster-filter-date').value = todayStr();
 document.getElementById('rooster-file')?.addEventListener('change', e => {
   handleFile(e.target.files[0]); e.target.value = '';

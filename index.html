@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lokaalbezetting – 1e Verdieping</title>
+  <title>Lokaalbezetting – Mijnheerenland</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <!-- SheetJS voor Excel-bestanden -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -14,7 +13,7 @@
   <header>
     <div class="header-left">
       <h1>Lokaalbezetting</h1>
-      <span class="subtitle">1e Verdieping – Mijnheerenland</span>
+      <span class="subtitle">Mijnheerenland</span>
     </div>
     <div class="header-right">
       <div id="clock"></div>
@@ -30,9 +29,9 @@
       <button class="sidebar-close" onclick="closeMenu()">✕</button>
     </div>
     <ul class="sidebar-menu">
-      <li><a class="sidebar-nav-link active" data-tab="plattegrond" href="#" onclick="switchTab('plattegrond'); closeMenu(); return false;">🗺 Plattegrond</a></li>
-      <li><a class="sidebar-nav-link" data-tab="rooster"     href="#" onclick="switchTab('rooster');     closeMenu(); return false;">📅 Rooster uploaden</a></li>
-      <li><a class="sidebar-nav-link" data-tab="admin"       href="#" onclick="switchTab('admin');       closeMenu(); return false;">⚙ Admin</a></li>
+      <li><a class="sidebar-nav-link active" data-tab="plattegrond" href="#" onclick="switchTab('plattegrond'); closeMenu(); return false;">Plattegrond</a></li>
+      <li><a class="sidebar-nav-link" data-tab="rooster"     href="#" onclick="switchTab('rooster');     closeMenu(); return false;">Rooster uploaden</a></li>
+      <li><a class="sidebar-nav-link" data-tab="admin"       href="#" onclick="switchTab('admin');       closeMenu(); return false;">Admin</a></li>
     </ul>
   </nav>
 
@@ -42,11 +41,16 @@
     <div id="tab-plattegrond" class="tab-content">
 
       <section class="plattegrond-wrapper">
-        <h2>Plattegrond — 1e verdieping</h2>
+
+        <!-- Verdieping-switcher -->
+        <div class="floor-switcher">
+          <button class="floor-btn active" data-floor="1e" onclick="switchFloor('1e')">1e Verdieping</button>
+          <button class="floor-btn" data-floor="bg" onclick="switchFloor('bg')">Begane Grond</button>
+        </div>
 
         <div class="zoom-wrapper" id="zoom-wrapper">
           <div class="fp-container" id="fp-container">
-            <img id="fp-img" src="plattegrond.png" alt="Plattegrond 1e verdieping"/>
+            <img id="fp-img" src="plattegrond.png" alt="Plattegrond"/>
 
             <div class="room-overlay vrij" id="room-144" onclick="selectRoom('144')">
               <span class="room-badge">L01.144</span>
@@ -58,10 +62,10 @@
               <span class="room-badge">L01.239</span>
             </div>
             <div class="room-overlay vrij sensor-room" id="room-243" onclick="selectRoom('243')">
-              <span class="room-badge">L01.243 📡</span>
+              <span class="room-badge">L01.243</span>
             </div>
             <div class="room-overlay vrij sensor-room" id="room-249" onclick="selectRoom('249')">
-              <span class="room-badge">L01.249 📡</span>
+              <span class="room-badge">L01.249</span>
             </div>
 
           </div>
@@ -77,7 +81,7 @@
           <span class="leg vrij">Vrij</span>
           <span class="leg bezet">Bezet</span>
           <span class="leg gereserveerd">Ingeroosterd / Gereserveerd</span>
-          <span class="leg sensor">📡 live sensor</span>
+          <span class="leg sensor">Live sensor</span>
         </div>
 
       </section>
@@ -103,9 +107,7 @@
     <!-- ═══ TAB 2: ROOSTER UPLOADEN ═══ -->
     <div id="tab-rooster" class="tab-content" style="display:none">
 
-      <!-- LOGIN SCHERM (zichtbaar als niet ingelogd) -->
       <div id="rooster-login" class="login-card">
-        <div class="login-icon">🔒</div>
         <h3>Inloggen vereist</h3>
         <p>Alleen roostercommissie-leden kunnen roosterdata uploaden.</p>
         <form id="login-form" onsubmit="handleLogin(event)">
@@ -120,72 +122,67 @@
         </form>
       </div>
 
-      <!-- INHOUD NA INLOGGEN (verborgen totdat je inlogt) -->
       <div id="rooster-authenticated" style="display:none">
 
-        <!-- Gebruikersbalk -->
         <div class="user-bar">
           <span>Ingelogd als <strong id="rooster-username"></strong></span>
           <button class="btn-outline" onclick="handleLogout()">Uitloggen</button>
         </div>
 
-      <div class="rooster-page">
+        <div class="rooster-page">
 
-        <!-- Upload kaart -->
-        <div class="upload-card" id="drop-zone">
-          <div class="upload-icon">📂</div>
-          <p class="upload-title">Sleep een CSV of Excel-bestand hiernaartoe</p>
-          <p class="upload-sub">Bestand van de roostercommissie (CSV of .xlsx)</p>
-          <div class="upload-actions">
-            <label class="btn-primary">
-              Kies bestand
-              <input type="file" id="rooster-file" accept=".csv,.xlsx,.xls" hidden/>
-            </label>
-            <button class="btn-outline" onclick="downloadTemplate()">⬇ Download sjabloon</button>
+          <div class="upload-card" id="drop-zone">
+            <p class="upload-title">Sleep een CSV of Excel-bestand hiernaartoe</p>
+            <p class="upload-sub">Bestand van de roostercommissie (CSV of .xlsx)</p>
+            <div class="upload-actions">
+              <label class="btn-primary">
+                Kies bestand
+                <input type="file" id="rooster-file" accept=".csv,.xlsx,.xls" hidden/>
+              </label>
+              <button class="btn-outline" onclick="downloadTemplate()">Download sjabloon</button>
+            </div>
+            <div class="upload-format">
+              <strong>Verwacht formaat — kolommen:</strong>
+              <code>Lokaal &nbsp;·&nbsp; Datum &nbsp;·&nbsp; Van &nbsp;·&nbsp; Tot &nbsp;·&nbsp; Groep &nbsp;·&nbsp; Vak</code>
+              <span>Lokaal: gebruik 144, 149, 239, 243 of 249 &nbsp;|&nbsp; Datum: 2026-05-20</span>
+            </div>
+            <div id="upload-feedback"></div>
           </div>
-          <div class="upload-format">
-            <strong>Verwacht formaat — kolommen:</strong>
-            <code>Lokaal &nbsp;·&nbsp; Datum &nbsp;·&nbsp; Van &nbsp;·&nbsp; Tot &nbsp;·&nbsp; Groep &nbsp;·&nbsp; Vak</code>
-            <span>Lokaal: gebruik 144, 149, 239, 243 of 249 &nbsp;|&nbsp; Datum: 2026-05-20</span>
-          </div>
-          <div id="upload-feedback"></div>
-        </div>
 
-        <!-- Rooster tabel -->
-        <div class="rooster-table-card" id="rooster-table-wrapper" style="display:none">
-          <div class="rooster-table-header">
-            <h3>Ingeroosterde lokalen <span id="rooster-count-badge"></span></h3>
-            <div class="rooster-filters">
-              <label>Datum
-                <input type="date" id="rooster-filter-date" oninput="renderRoosterTable()"/>
-              </label>
-              <label>Lokaal
-                <select id="rooster-filter-room" onchange="renderRoosterTable()">
-                  <option value="">Alle lokalen</option>
-                  <option value="144">L01.144</option>
-                  <option value="149">L01.149</option>
-                  <option value="239">L01.239</option>
-                  <option value="243">L01.243</option>
-                  <option value="249">L01.249</option>
-                </select>
-              </label>
-              <button class="btn-danger" onclick="clearRooster()">🗑 Verwijder alles</button>
+          <div class="rooster-table-card" id="rooster-table-wrapper" style="display:none">
+            <div class="rooster-table-header">
+              <h3>Ingeroosterde lokalen <span id="rooster-count-badge"></span></h3>
+              <div class="rooster-filters">
+                <label>Datum
+                  <input type="date" id="rooster-filter-date" oninput="renderRoosterTable()"/>
+                </label>
+                <label>Lokaal
+                  <select id="rooster-filter-room" onchange="renderRoosterTable()">
+                    <option value="">Alle lokalen</option>
+                    <option value="144">L01.144</option>
+                    <option value="149">L01.149</option>
+                    <option value="239">L01.239</option>
+                    <option value="243">L01.243</option>
+                    <option value="249">L01.249</option>
+                  </select>
+                </label>
+                <button class="btn-danger" onclick="clearRooster()">Verwijder alles</button>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table class="rooster-table">
+                <thead>
+                  <tr>
+                    <th>Lokaal</th><th>Datum</th><th>Van</th><th>Tot</th>
+                    <th>Groep</th><th>Vak</th><th></th>
+                  </tr>
+                </thead>
+                <tbody id="rooster-tbody"></tbody>
+              </table>
             </div>
           </div>
-          <div class="table-scroll">
-            <table class="rooster-table">
-              <thead>
-                <tr>
-                  <th>Lokaal</th><th>Datum</th><th>Van</th><th>Tot</th>
-                  <th>Groep</th><th>Vak</th><th></th>
-                </tr>
-              </thead>
-              <tbody id="rooster-tbody"></tbody>
-            </table>
-          </div>
-        </div>
 
-      </div><!-- /rooster-page -->
+        </div><!-- /rooster-page -->
       </div><!-- /rooster-authenticated -->
 
     </div><!-- /tab-rooster -->
@@ -193,9 +190,7 @@
     <!-- ═══ TAB 3: ADMIN ═══ -->
     <div id="tab-admin" class="tab-content" style="display:none">
 
-      <!-- LOGIN -->
       <div id="admin-login" class="login-card">
-        <div class="login-icon">⚙</div>
         <h3>Inloggen vereist</h3>
         <p>Alleen beheerders kunnen de admin-pagina bekijken.</p>
         <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
@@ -210,7 +205,6 @@
         </form>
       </div>
 
-      <!-- INHOUD NA INLOGGEN -->
       <div id="admin-authenticated" style="display:none">
 
         <div class="user-bar">
@@ -218,7 +212,6 @@
           <button class="btn-outline" onclick="handleLogout()">Uitloggen</button>
         </div>
 
-        <!-- Verbindingsstatus -->
         <div class="admin-section">
           <h2>Verbindingsstatus</h2>
           <div class="status-cards">
@@ -239,7 +232,6 @@
           </div>
         </div>
 
-        <!-- Reserveringen beheren -->
         <div class="admin-section">
           <div class="admin-section-header">
             <h2>Reserveringen beheren</h2>
