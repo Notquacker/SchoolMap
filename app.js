@@ -868,6 +868,19 @@ if (window.innerWidth <= 768) {
   });
 }
 
+// ── Dark mode ─────────────────────────────────────────────────────────
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('darkMode', isDark ? '1' : '0');
+  const btn = document.getElementById('dark-toggle-btn');
+  if (btn) btn.textContent = isDark ? 'Lichte modus' : 'Donkere modus';
+}
+if (localStorage.getItem('darkMode') === '1') {
+  document.body.classList.add('dark');
+  const btn = document.getElementById('dark-toggle-btn');
+  if (btn) btn.textContent = 'Lichte modus';
+}
+
 connectMqtt();
 checkAuth();
 refreshCache();
