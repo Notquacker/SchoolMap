@@ -610,6 +610,14 @@ const fpContainer = document.getElementById('fp-container');
 
 function applyTransform() {
   fpContainer.style.transform = `translate(${panX}px,${panY}px) scale(${scale})`;
+  // Houd badge-tekst visueel altijd ~9px, ongeacht zoom-niveau
+  const fs = +(9 / scale).toFixed(2);
+  const p1 = +(1 / scale).toFixed(2);
+  const p2 = +(4 / scale).toFixed(2);
+  document.querySelectorAll('.room-badge').forEach(b => {
+    b.style.fontSize = fs + 'px';
+    b.style.padding  = `${p1}px ${p2}px`;
+  });
 }
 function constrainPan() {
   panX = Math.min(0, Math.max(panX, zoomWrapper.offsetWidth  - fpContainer.offsetWidth  * scale));
@@ -748,6 +756,15 @@ setTimeout(setupOverlays, 1000);
 // INIT
 // ══════════════════════════════════════════════════════════════════════
 initRoomClasses();
+
+// Kortere labels op mobiel: "144" i.p.v. "L01.144"
+if (window.innerWidth <= 768) {
+  Object.keys(ROOMS).forEach(id => {
+    const badge = document.querySelector(`#room-${id} .room-badge`);
+    if (badge) badge.textContent = ROOMS[id].sensor ? `${id} 📡` : id;
+  });
+}
+
 connectMqtt();
 checkAuth();
 refreshCache();
