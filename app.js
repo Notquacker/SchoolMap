@@ -29,8 +29,8 @@ const BUILDINGS = {
   'mp': {
     name: 'Museumpark',
     floors: [
-      { id: 'bg', label: 'BG', image: 'MP/BEGANE_GROND_A.png' },
-      { id: '1e', label: '1e', image: 'MP/1E_VERDIEPING_A.png' },
+      { id: 'bg', label: 'BG', image: 'Plattegrond/MP/BEGANE_GROND_A.png' },
+      { id: '1e', label: '1e', image: 'Plattegrond/MP/1E_VERDIEPING_A.png' },
       { id: '2e', label: '2e', image: null },
       { id: '3e', label: '3e', image: null },
     ]
@@ -38,7 +38,7 @@ const BUILDINGS = {
   'pv': {
     name: 'Paviljoen',
     floors: [
-      { id: 'bg', label: 'BG', image: null },
+      { id: 'bg', label: 'BG', image: 'Plattegrond/PV/BEGANE_GROND_OTHER.png' },
       { id: '1e', label: '1e', image: null },
       { id: '2e', label: '2e', image: null },
     ]
