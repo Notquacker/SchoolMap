@@ -108,9 +108,9 @@ function loadFloor() {
     img.style.display = '';
     if (placeholder) placeholder.remove();
     resetZoom();
-    img.addEventListener('load', () => setupOverlays(), { once: true });
+    img.addEventListener('load', () => { resetZoom(); setupOverlays(); }, { once: true });
     img.src = image;
-    if (img.complete && img.naturalWidth) setupOverlays();
+    if (img.complete && img.naturalWidth) { resetZoom(); setupOverlays(); }
   } else {
     img.style.display = 'none';
     if (!placeholder) {
@@ -693,7 +693,7 @@ function adminNewReservation() {
 let scale = 1, panX = 0, panY = 0;
 let isDragging = false, didDrag = false;
 let dragStartX, dragStartY, panStartX, panStartY;
-const MIN_SCALE = 1, MAX_SCALE = 10;
+const MIN_SCALE = 0.05, MAX_SCALE = 10;
 
 const zoomWrapper = document.getElementById('zoom-wrapper');
 const fpContainer = document.getElementById('fp-container');
@@ -711,8 +711,12 @@ function applyTransform() {
 }
 
 function constrainPan() {
-  panX = Math.min(0, Math.max(panX, zoomWrapper.offsetWidth  - fpContainer.offsetWidth  * scale));
-  panY = Math.min(0, Math.max(panY, zoomWrapper.offsetHeight - fpContainer.offsetHeight * scale));
+  const imgW = fpContainer.offsetWidth  * scale;
+  const imgH = fpContainer.offsetHeight * scale;
+  const vw   = zoomWrapper.offsetWidth;
+  const vh   = zoomWrapper.offsetHeight;
+  panX = imgW <= vw ? (vw - imgW) / 2 : Math.min(0, Math.max(panX, vw - imgW));
+  panY = imgH <= vh ? (vh - imgH) / 2 : Math.min(0, Math.max(panY, vh - imgH));
 }
 function zoomAt(cx, cy, factor) {
   const ns = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * factor));
@@ -721,7 +725,17 @@ function zoomAt(cx, cy, factor) {
   scale = ns; constrainPan(); applyTransform();
 }
 function zoomBtn(f) { zoomAt(zoomWrapper.offsetWidth/2, zoomWrapper.offsetHeight/2, f); }
-function resetZoom() { scale=1; panX=0; panY=0; applyTransform(); }
+function resetZoom() {
+  const img = document.getElementById('fp-img');
+  const W = img.naturalWidth, H = img.naturalHeight;
+  if (!W || !H) { scale = 1; panX = 0; panY = 0; applyTransform(); return; }
+  const vw = zoomWrapper.offsetWidth  || window.innerWidth  - 32;
+  const vh = zoomWrapper.offsetHeight || 400;
+  const imgHatOne = vw * H / W;
+  scale = imgHatOne <= vh ? 1 : vh / imgHatOne;
+  constrainPan();
+  applyTransform();
+}
 
 zoomWrapper.addEventListener('wheel', e => {
   e.preventDefault();

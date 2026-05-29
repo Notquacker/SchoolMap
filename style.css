@@ -304,9 +304,12 @@ h2 { font-size: 1rem; font-weight: 600; margin-bottom: 10px; color: #1a237e; }
 .zoom-wrapper {
   position: relative;
   overflow: hidden;
-  border-radius: 8px;
-  background: white;
-  height: 520px;
+  border-radius: 10px;
+  background: #f8f9fb;
+  border: 1px solid #e8eaf0;
+  height: 65vh;
+  min-height: 400px;
+  max-height: 700px;
   cursor: grab;
   user-select: none;
 }
@@ -411,7 +414,7 @@ h2 { font-size: 1rem; font-weight: 600; margin-bottom: 10px; color: #1a237e; }
 }
 @media (max-width: 640px) {
   .info-grid { grid-template-columns: 1fr; }
-  .zoom-wrapper { height: 300px; }
+  .zoom-wrapper { height: 55vw; min-height: 260px; max-height: 380px; }
 }
 
 .panel {
