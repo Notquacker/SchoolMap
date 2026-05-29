@@ -682,10 +682,11 @@ function setupOverlays() {
   Object.entries(ROOM_COORDS).forEach(([id, r]) => {
     const el = document.getElementById('room-' + id);
     if (!el) return;
-    el.style.left   = (r.x / W * 100) + '%';
-    el.style.top    = (r.y / H * 100) + '%';
-    el.style.width  = (r.w / W * 100) + '%';
-    el.style.height = (r.h / H * 100) + '%';
+    el.style.left      = (r.x / W * 100) + '%';
+    el.style.top       = (r.y / H * 100) + '%';
+    el.style.width     = (r.w / W * 100) + '%';
+    el.style.height    = (r.h / H * 100) + '%';
+    el.style.transform = `rotate(${r.rotate || 0}deg)`;
   });
   if (window.innerWidth <= 768) {
     // Fire at 4 increasing delays — whichever fires when layout is ready wins

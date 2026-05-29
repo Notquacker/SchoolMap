@@ -32,6 +32,7 @@
       text-shadow: 0 1px 3px #000;
       min-width: 60px;
       min-height: 30px;
+      transform-origin: center center;
     }
     .overlay-box .resize-handle {
       position: absolute;
@@ -41,6 +42,19 @@
       cursor: se-resize;
       opacity: 0.7;
     }
+    .overlay-box .rotate-handle {
+      position: absolute;
+      top: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px; height: 14px;
+      background: white;
+      border: 2px solid #888;
+      border-radius: 50%;
+      cursor: grab;
+      opacity: 0.9;
+    }
+    .overlay-box .rotate-handle:active { cursor: grabbing; }
 
     /* kleuren per lokaal */
     #box-144 { background: rgba(76,175,80,0.35);  border-color: #4caf50; }
@@ -87,8 +101,9 @@
 
 <h2>Kalibratie — sleep de gekleurde vakjes over de juiste lokalen</h2>
 <p>
-  Sleep elk vak naar het correcte lokaal op de plattegrond.
-  Sleep de witte hoek rechtsonder om het vak groter/kleiner te maken.
+  Sleep het vak om het te verplaatsen &nbsp;·&nbsp;
+  Sleep de <strong>witte hoek</strong> (rechtsonder) om groter/kleiner te maken &nbsp;·&nbsp;
+  Sleep de <strong>witte cirkel</strong> (boven midden) om te draaien &nbsp;·&nbsp;
   Klik daarna op "Kopieer coördinaten".
 </p>
 
@@ -96,20 +111,24 @@
   <img id="floorplan" src="plattegrond.png"
        alt="Plattegrond — zorg dat plattegrond.png in dezelfde map staat"/>
 
-  <!-- Sleepbare vakjes, beginpositie is een schatting -->
   <div class="overlay-box" id="box-144" style="left:50px;top:80px;width:120px;height:70px;">
+    <div class="rotate-handle"></div>
     L01.144<div class="resize-handle"></div>
   </div>
   <div class="overlay-box" id="box-149" style="left:180px;top:80px;width:120px;height:70px;">
+    <div class="rotate-handle"></div>
     L01.149<div class="resize-handle"></div>
   </div>
   <div class="overlay-box" id="box-239" style="left:350px;top:280px;width:150px;height:80px;">
+    <div class="rotate-handle"></div>
     L01.239<div class="resize-handle"></div>
   </div>
   <div class="overlay-box" id="box-243" style="left:510px;top:280px;width:150px;height:80px;">
+    <div class="rotate-handle"></div>
     L01.243 📡<div class="resize-handle"></div>
   </div>
   <div class="overlay-box" id="box-249" style="left:670px;top:280px;width:120px;height:80px;">
+    <div class="rotate-handle"></div>
     L01.249 📡<div class="resize-handle"></div>
   </div>
 </div>
@@ -119,65 +138,91 @@
 
 <div id="coords">
   Muis: <span id="mx">0</span>, <span id="my">0</span><br/>
-  Schaalfactor: <span id="scale">1.00</span>
+  Schaalfactor: <span id="scale">1.00</span><br/>
+  Rotatie: <span id="rot">0</span>°
 </div>
 
 <script>
-  const img = document.getElementById('floorplan');
+  const img     = document.getElementById('floorplan');
   const wrapper = document.getElementById('wrapper');
 
-  // Toon muiscoördinaten relatief aan de afbeelding
+  // Rotatie per box (graden)
+  const boxRotation = { '144': 0, '149': 0, '239': 0, '243': 0, '249': 0 };
+
+  // ── Muis-coördinaten tonen ──
   wrapper.addEventListener('mousemove', e => {
-    const rect = img.getBoundingClientRect();
+    const rect   = img.getBoundingClientRect();
     const scaleX = img.naturalWidth  / rect.width;
     const scaleY = img.naturalHeight / rect.height;
-    const x = Math.round((e.clientX - rect.left) * scaleX);
-    const y = Math.round((e.clientY - rect.top)  * scaleY);
-    document.getElementById('mx').textContent = x;
-    document.getElementById('my').textContent = y;
+    document.getElementById('mx').textContent = Math.round((e.clientX - rect.left) * scaleX);
+    document.getElementById('my').textContent = Math.round((e.clientY - rect.top)  * scaleY);
     document.getElementById('scale').textContent = scaleX.toFixed(2);
   });
 
-  // ── Drag & resize logica ──
+  // ── Drag / Resize / Rotate ──
   let active = null, mode = null;
   let startX, startY, startL, startT, startW, startH;
+  let rotCenterX, rotCenterY, rotStartAngle, rotBoxId;
 
   document.querySelectorAll('.overlay-box').forEach(box => {
     box.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('rotate-handle')) return; // handled separately
       if (e.target.classList.contains('resize-handle')) {
         mode = 'resize';
       } else {
         mode = 'drag';
       }
-      active = box;
-      startX = e.clientX;
-      startY = e.clientY;
-      startL = parseInt(box.style.left);
-      startT = parseInt(box.style.top);
-      startW = parseInt(box.style.width)  || box.offsetWidth;
-      startH = parseInt(box.style.height) || box.offsetHeight;
+      active   = box;
+      startX   = e.clientX;
+      startY   = e.clientY;
+      startL   = parseInt(box.style.left);
+      startT   = parseInt(box.style.top);
+      startW   = parseInt(box.style.width)  || box.offsetWidth;
+      startH   = parseInt(box.style.height) || box.offsetHeight;
       e.preventDefault();
+    });
+  });
+
+  document.querySelectorAll('.rotate-handle').forEach(handle => {
+    handle.addEventListener('mousedown', e => {
+      const box    = handle.closest('.overlay-box');
+      rotBoxId     = box.id.replace('box-', '');
+      const rect   = box.getBoundingClientRect();
+      rotCenterX   = rect.left + rect.width  / 2;
+      rotCenterY   = rect.top  + rect.height / 2;
+      const dx     = e.clientX - rotCenterX;
+      const dy     = e.clientY - rotCenterY;
+      rotStartAngle = Math.atan2(dy, dx) * 180 / Math.PI - boxRotation[rotBoxId];
+      mode   = 'rotate';
+      active = box;
+      e.preventDefault();
+      e.stopPropagation();
     });
   });
 
   document.addEventListener('mousemove', e => {
     if (!active) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
     if (mode === 'drag') {
-      active.style.left = (startL + dx) + 'px';
-      active.style.top  = (startT + dy) + 'px';
-    } else {
-      active.style.width  = Math.max(40, startW + dx) + 'px';
-      active.style.height = Math.max(20, startH + dy) + 'px';
+      active.style.left = (startL + e.clientX - startX) + 'px';
+      active.style.top  = (startT + e.clientY - startY) + 'px';
+    } else if (mode === 'resize') {
+      active.style.width  = Math.max(40, startW + e.clientX - startX) + 'px';
+      active.style.height = Math.max(20, startH + e.clientY - startY) + 'px';
+    } else if (mode === 'rotate') {
+      const dx  = e.clientX - rotCenterX;
+      const dy  = e.clientY - rotCenterY;
+      const deg = Math.atan2(dy, dx) * 180 / Math.PI - rotStartAngle;
+      boxRotation[rotBoxId] = deg;
+      active.style.transform = `rotate(${deg}deg)`;
+      document.getElementById('rot').textContent = Math.round(deg);
     }
   });
 
-  document.addEventListener('mouseup', () => { active = null; });
+  document.addEventListener('mouseup', () => { active = null; mode = null; });
 
   // ── Coördinaten exporteren ──
   function copyCoords() {
-    const rect = img.getBoundingClientRect();
+    const rect   = img.getBoundingClientRect();
     const scaleX = img.naturalWidth  / rect.width;
     const scaleY = img.naturalHeight / rect.height;
 
@@ -188,7 +233,8 @@
       const t = Math.round(parseInt(b.style.top)  * scaleY);
       const w = Math.round(b.offsetWidth           * scaleX);
       const h = Math.round(b.offsetHeight          * scaleY);
-      return `${id}: x=${l}, y=${t}, breedte=${w}, hoogte=${h}`;
+      const r = Math.round(boxRotation[id] || 0);
+      return `${id}: x=${l}, y=${t}, breedte=${w}, hoogte=${h}, rotate=${r}`;
     }).join('\n');
 
     document.getElementById('output').textContent = out;
