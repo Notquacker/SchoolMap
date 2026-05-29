@@ -42,15 +42,24 @@
 
       <section class="plattegrond-wrapper">
 
-        <!-- Verdieping-switcher -->
-        <div class="floor-switcher">
-          <button class="floor-btn active" data-floor="1e" onclick="switchFloor('1e')">1e Verdieping</button>
-          <button class="floor-btn" data-floor="bg" onclick="switchFloor('bg')">Begane Grond</button>
+        <!-- Gebouw & verdieping switcher -->
+        <div class="map-switcher">
+          <div class="switcher-row">
+            <span class="switcher-label">Gebouw</span>
+            <div class="switcher-btns">
+              <button class="building-btn active" data-building="mp" onclick="switchBuilding('mp')">Museumpark</button>
+              <button class="building-btn" data-building="pv" onclick="switchBuilding('pv')">Paviljoen</button>
+            </div>
+          </div>
+          <div class="switcher-row">
+            <span class="switcher-label">Verdieping</span>
+            <div class="switcher-btns" id="floor-btns"></div>
+          </div>
         </div>
 
         <div class="zoom-wrapper" id="zoom-wrapper">
           <div class="fp-container" id="fp-container">
-            <img id="fp-img" src="plattegrond.png" alt="Plattegrond"/>
+            <img id="fp-img" src="MP/1E_VERDIEPING_A.png" alt="Plattegrond"/>
 
             <div class="room-overlay vrij" id="room-144" onclick="selectRoom('144')">
               <span class="room-badge">L01.144</span>

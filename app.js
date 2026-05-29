@@ -24,31 +24,103 @@ const MQTT_USER       = 'Xayan_website';
 const MQTT_PASS       = 'QWErty$123';
 const MQTT_TOPIC_BASE = 'school/lokaalbezetting/';
 
-// ── Verdieping-switcher ───────────────────────────────────────────────
-const FLOOR_IMAGES = {
-  '1e': 'plattegrond.png',
-  'bg': 'begane_grond.png',
+// ── Gebouw & verdieping configuratie ─────────────────────────────────
+const BUILDINGS = {
+  'mp': {
+    name: 'Museumpark',
+    floors: [
+      { id: 'bg', label: 'BG', image: 'MP/BEGANE_GROND_A.png' },
+      { id: '1e', label: '1e', image: 'MP/1E_VERDIEPING_A.png' },
+      { id: '2e', label: '2e', image: null },
+      { id: '3e', label: '3e', image: null },
+    ]
+  },
+  'pv': {
+    name: 'Paviljoen',
+    floors: [
+      { id: 'bg', label: 'BG', image: null },
+      { id: '1e', label: '1e', image: null },
+      { id: '2e', label: '2e', image: null },
+    ]
+  }
 };
-let currentFloor = '1e';
+
+// Kamer-coördinaten per gebouw_verdieping combinatie
+const FLOOR_ROOMS = {
+  'mp_1e': ROOM_COORDS,
+};
+
+let currentBuilding = 'mp';
+let currentFloor    = '1e';
+
+function floorKey()        { return `${currentBuilding}_${currentFloor}`; }
+function getCurrentRooms() { return FLOOR_ROOMS[floorKey()] || {}; }
+function getCurrentImage() {
+  const f = BUILDINGS[currentBuilding]?.floors.find(f => f.id === currentFloor);
+  return f?.image || null;
+}
+
+function initMapSwitcher() {
+  renderFloorBtns();
+}
+
+function renderFloorBtns() {
+  const floors = BUILDINGS[currentBuilding].floors;
+  document.getElementById('floor-btns').innerHTML = floors.map(f => `
+    <button class="floor-btn ${f.id === currentFloor ? 'active' : ''}"
+            data-floor="${f.id}"
+            onclick="switchFloor('${f.id}')"
+            ${f.image ? '' : 'disabled title="Nog niet beschikbaar"'}>${f.label}</button>
+  `).join('');
+}
+
+function switchBuilding(building) {
+  currentBuilding = building;
+  document.querySelectorAll('.building-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.building-btn[data-building="${building}"]`).classList.add('active');
+
+  // Selecteer eerste beschikbare verdieping van dit gebouw
+  const first = BUILDINGS[building].floors.find(f => f.image);
+  currentFloor = first ? first.id : BUILDINGS[building].floors[0].id;
+
+  renderFloorBtns();
+  loadFloor();
+}
 
 function switchFloor(floor) {
-  if (floor === currentFloor) return;
   currentFloor = floor;
   document.querySelectorAll('.floor-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.floor-btn[data-floor="${floor}"]`).classList.add('active');
+  document.querySelector(`.floor-btn[data-floor="${floor}"]`)?.classList.add('active');
+  loadFloor();
+}
 
-  const img = document.getElementById('fp-img');
-  img.src = FLOOR_IMAGES[floor];
+function loadFloor() {
+  const image = getCurrentImage();
+  const img   = document.getElementById('fp-img');
 
-  // Overlays alleen op 1e verdieping (begane grond nog niet gekalibreerd)
-  const showOverlays = floor === '1e';
+  const hasRooms = Object.keys(getCurrentRooms()).length > 0;
   document.querySelectorAll('.room-overlay').forEach(el => {
-    el.style.display = showOverlays ? '' : 'none';
+    el.style.display = hasRooms ? '' : 'none';
   });
 
-  resetZoom();
-  img.addEventListener('load', () => setupOverlays(), { once: true });
-  if (img.complete && img.naturalWidth) setupOverlays();
+  const placeholder = document.getElementById('no-map-msg');
+  if (image) {
+    img.style.display = '';
+    if (placeholder) placeholder.remove();
+    resetZoom();
+    img.addEventListener('load', () => setupOverlays(), { once: true });
+    img.src = image;
+    if (img.complete && img.naturalWidth) setupOverlays();
+  } else {
+    img.style.display = 'none';
+    if (!placeholder) {
+      const div = document.createElement('div');
+      div.id = 'no-map-msg';
+      div.style.cssText = 'display:flex;align-items:center;justify-content:center;height:200px;color:#aaa;font-size:.9rem;';
+      div.textContent = 'Plattegrond nog niet beschikbaar';
+      document.getElementById('fp-container').appendChild(div);
+    }
+  }
 }
 
 // ── State ─────────────────────────────────────────────────────────────
@@ -707,8 +779,7 @@ function setupOverlays() {
   const W = img.naturalWidth, H = img.naturalHeight;
   if (!W || !H) { setTimeout(setupOverlays, 80); return; }
 
-  const coords = currentFloor === '1e' ? ROOM_COORDS : {};
-  Object.entries(coords).forEach(([id, r]) => {
+  Object.entries(getCurrentRooms()).forEach(([id, r]) => {
     const el = document.getElementById('room-' + id);
     if (!el) return;
     el.style.left      = (r.x / W * 100) + '%';
@@ -718,13 +789,14 @@ function setupOverlays() {
     el.style.transform = `rotate(${r.rotate || 0}deg)`;
   });
 
-  if (window.innerWidth <= 768 && currentFloor === '1e') {
+  if (window.innerWidth <= 768 && Object.keys(getCurrentRooms()).length > 0) {
     [100, 300, 600, 1200].forEach(d => setTimeout(zoomToRooms, d));
   }
 }
 
 function zoomToRooms() {
-  if (currentFloor !== '1e') return;
+  const rooms = getCurrentRooms();
+  if (!Object.keys(rooms).length) return;
   const img = document.getElementById('fp-img');
   if (!img?.naturalWidth) return;
   const W = img.naturalWidth, H = img.naturalHeight;
@@ -736,7 +808,7 @@ function zoomToRooms() {
   const vw = zoomWrapper.offsetWidth || dispW;
   const vh = zoomWrapper.offsetHeight || 300;
 
-  const coords = Object.values(ROOM_COORDS);
+  const coords = Object.values(rooms);
   const x0 = Math.min(...coords.map(r => r.x));
   const y0 = Math.min(...coords.map(r => r.y));
   const x1 = Math.max(...coords.map(r => r.x + r.w));
@@ -772,6 +844,7 @@ setTimeout(setupOverlays, 1000);
 // INIT
 // ══════════════════════════════════════════════════════════════════════
 initRoomClasses();
+initMapSwitcher();
 
 // Kortere labels op mobiel
 if (window.innerWidth <= 768) {
