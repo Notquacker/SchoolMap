@@ -343,13 +343,29 @@ function renderMqttLog() {
   const el = document.getElementById('mqtt-log');
   if (!el) return;
   if (!mqttLog.length) { el.innerHTML = '<p class="hint">Nog geen berichten ontvangen.</p>'; return; }
-  el.innerHTML = mqttLog.map(m =>
-    `<div class="mqtt-log-row">
-       <span class="mqtt-log-time">${m.time}</span>
-       <span class="mqtt-log-topic">${m.topic}</span>
-       <span class="mqtt-log-payload">${m.payload}</span>
-     </div>`
-  ).join('');
+
+  const groups = {};
+  mqttLog.forEach(m => {
+    const roomId = m.topic.replace(MQTT_TOPIC_BASE, '').split('/')[0];
+    const key = SENSOR_ROOMS.includes(roomId) ? roomId : 'overig';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  });
+
+  const order = [...SENSOR_ROOMS, 'overig'].filter(k => groups[k]?.length);
+  el.innerHTML = order.map(key => {
+    const label = key === 'overig' ? 'Overig' : `L01.${key}`;
+    const rows = groups[key].map(m =>
+      `<div class="mqtt-log-row">
+         <span class="mqtt-log-time">${m.time}</span>
+         <span class="mqtt-log-payload">${m.payload}</span>
+       </div>`
+    ).join('');
+    return `<div class="mqtt-log-group">
+      <div class="mqtt-log-group-title">${label}</div>
+      ${rows}
+    </div>`;
+  }).join('');
 }
 
 function connectMqtt() {
