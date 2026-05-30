@@ -2,12 +2,17 @@
 const API_BASE = '';
 
 // ── Kalibratie-coördinaten (pixels van de originele afbeelding) ──────
-const ROOM_COORDS = {
+const ROOM_COORDS_MP_1E = {
   '144': { x: 1313, y: 154,  w: 137, h:  93, rotate: -25 },
   '149': { x: 1439, y:  96,  w: 132, h:  94, rotate: -26 },
   '239': { x: 1214, y: 389,  w: 204, h: 144, rotate: -25 },
   '243': { x: 1399, y: 303,  w: 205, h: 144, rotate: -25 },
   '249': { x: 1594, y: 258,  w: 168, h: 106, rotate: -26 },
+};
+
+// PV begane grond — gebruik calibrate.html om exacte positie te bepalen
+const ROOM_COORDS_PV_BG = {
+  'expo': { x: 600, y: 700, w: 300, h: 200, rotate: 0 },
 };
 
 // ── Room configuration ────────────────────────────────────────────────
@@ -17,6 +22,7 @@ const ROOMS = {
   '239': { label: 'L01.239', type: 'Vaklokaal',      cap: 36, area: 78.66, sensor: false },
   '243': { label: 'L01.243', type: 'Computerlokaal', cap: 28, area: 78.66, sensor: true  },
   '249': { label: 'L01.249', type: 'Vaklokaal',      cap: 24, area: 57.12, sensor: true  },
+  'expo': { label: 'Expo',   type: 'Expositieruimte', cap: 50, area: 0,    sensor: true  },
 };
 
 const MQTT_BROKER     = 'wss://42bf187b56664c7ab6b6524d0ef161e8.s1.eu.hivemq.cloud:8884/mqtt';
@@ -47,7 +53,8 @@ const BUILDINGS = {
 
 // Kamer-coördinaten per gebouw_verdieping combinatie
 const FLOOR_ROOMS = {
-  'mp_1e': ROOM_COORDS,
+  'mp_1e': ROOM_COORDS_MP_1E,
+  'pv_bg': ROOM_COORDS_PV_BG,
 };
 
 let currentBuilding = 'mp';
@@ -267,7 +274,7 @@ function updateMqttStatus(state, text) {
 }
 
 // ── Sensor tracking ───────────────────────────────────────────────────
-const SENSOR_ROOMS   = ['243', '249'];
+const SENSOR_ROOMS   = ['243', '249', 'expo'];
 const lastMqttMsg    = {};   // roomId → { time: Date, payload, bezet }
 const sensorOverride = {};   // roomId → 'bezet' | 'vrij' | null (null = sensor volgen)
 const SENSOR_TIMEOUT_MIN = 3;

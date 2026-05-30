@@ -107,30 +107,20 @@
   Klik daarna op "Kopieer coördinaten".
 </p>
 
+<div style="margin:8px 16px 12px">
+  <label style="font-size:.85rem;color:#ccc">Verdieping:&nbsp;
+    <select id="floor-select" onchange="switchFloor()" style="background:#333;color:white;border:1px solid #555;padding:4px 8px;border-radius:4px;font-size:.85rem">
+      <option value="mp_1e">Museumpark — 1e Verdieping</option>
+      <option value="pv_bg">Paviljoen — Begane Grond</option>
+    </select>
+  </label>
+</div>
+
 <div id="wrapper">
   <img id="floorplan" src="Plattegrond/MP/1E_VERDIEPING_A.png"
-       alt="Plattegrond — 1e verdieping Museumpark"/>
+       alt="Plattegrond"/>
 
-  <div class="overlay-box" id="box-144" style="left:50px;top:80px;width:120px;height:70px;">
-    <div class="rotate-handle"></div>
-    L01.144<div class="resize-handle"></div>
-  </div>
-  <div class="overlay-box" id="box-149" style="left:180px;top:80px;width:120px;height:70px;">
-    <div class="rotate-handle"></div>
-    L01.149<div class="resize-handle"></div>
-  </div>
-  <div class="overlay-box" id="box-239" style="left:350px;top:280px;width:150px;height:80px;">
-    <div class="rotate-handle"></div>
-    L01.239<div class="resize-handle"></div>
-  </div>
-  <div class="overlay-box" id="box-243" style="left:510px;top:280px;width:150px;height:80px;">
-    <div class="rotate-handle"></div>
-    L01.243 📡<div class="resize-handle"></div>
-  </div>
-  <div class="overlay-box" id="box-249" style="left:670px;top:280px;width:120px;height:80px;">
-    <div class="rotate-handle"></div>
-    L01.249 📡<div class="resize-handle"></div>
-  </div>
+  <!-- Boxes worden dynamisch geladen via JS -->
 </div>
 
 <button onclick="copyCoords()">Kopieer coördinaten</button>
@@ -146,58 +136,86 @@
   const img     = document.getElementById('floorplan');
   const wrapper = document.getElementById('wrapper');
 
-  // Rotatie per box (graden)
-  const boxRotation = { '144': 0, '149': 0, '239': 0, '243': 0, '249': 0 };
+  const FLOORS = {
+    'mp_1e': {
+      image: 'Plattegrond/MP/1E_VERDIEPING_A.png',
+      rooms: {
+        '144':  { label: 'L01.144', color: '#4caf50' },
+        '149':  { label: 'L01.149', color: '#2196f3' },
+        '239':  { label: 'L01.239', color: '#ff9800' },
+        '243':  { label: 'L01.243', color: '#f44336' },
+        '249':  { label: 'L01.249', color: '#9c27b0' },
+      }
+    },
+    'pv_bg': {
+      image: 'Plattegrond/PV/BEGANE_GROND_OTHER.png',
+      rooms: {
+        'expo': { label: 'Expo', color: '#00bcd4' },
+      }
+    }
+  };
 
-  // ── Muis-coördinaten tonen ──
-  wrapper.addEventListener('mousemove', e => {
-    const rect   = img.getBoundingClientRect();
-    const scaleX = img.naturalWidth  / rect.width;
-    const scaleY = img.naturalHeight / rect.height;
-    document.getElementById('mx').textContent = Math.round((e.clientX - rect.left) * scaleX);
-    document.getElementById('my').textContent = Math.round((e.clientY - rect.top)  * scaleY);
-    document.getElementById('scale').textContent = scaleX.toFixed(2);
-  });
+  const boxRotation = {};
+  let currentFloor = 'mp_1e';
+
+  function switchFloor() {
+    currentFloor = document.getElementById('floor-select').value;
+    loadFloor();
+  }
+
+  function loadFloor() {
+    const floor = FLOORS[currentFloor];
+    img.src = floor.image;
+
+    // Verwijder oude boxes
+    wrapper.querySelectorAll('.overlay-box').forEach(b => b.remove());
+
+    Object.entries(floor.rooms).forEach(([id, cfg], i) => {
+      boxRotation[id] = 0;
+      const box = document.createElement('div');
+      box.className = 'overlay-box';
+      box.id = 'box-' + id;
+      box.style.cssText = `left:${60 + i*160}px;top:100px;width:130px;height:75px;background:${cfg.color}55;border-color:${cfg.color}`;
+      box.innerHTML = `<div class="rotate-handle"></div>${cfg.label}<div class="resize-handle"></div>`;
+      wrapper.appendChild(box);
+      attachEvents(box, id);
+    });
+  }
 
   // ── Drag / Resize / Rotate ──
   let active = null, mode = null;
   let startX, startY, startL, startT, startW, startH;
   let rotCenterX, rotCenterY, rotStartAngle, rotBoxId;
 
-  document.querySelectorAll('.overlay-box').forEach(box => {
+  function attachEvents(box, id) {
     box.addEventListener('mousedown', e => {
-      if (e.target.classList.contains('rotate-handle')) return; // handled separately
-      if (e.target.classList.contains('resize-handle')) {
-        mode = 'resize';
-      } else {
-        mode = 'drag';
-      }
-      active   = box;
-      startX   = e.clientX;
-      startY   = e.clientY;
-      startL   = parseInt(box.style.left);
-      startT   = parseInt(box.style.top);
-      startW   = parseInt(box.style.width)  || box.offsetWidth;
-      startH   = parseInt(box.style.height) || box.offsetHeight;
-      e.preventDefault();
-    });
-  });
-
-  document.querySelectorAll('.rotate-handle').forEach(handle => {
-    handle.addEventListener('mousedown', e => {
-      const box    = handle.closest('.overlay-box');
-      rotBoxId     = box.id.replace('box-', '');
-      const rect   = box.getBoundingClientRect();
-      rotCenterX   = rect.left + rect.width  / 2;
-      rotCenterY   = rect.top  + rect.height / 2;
-      const dx     = e.clientX - rotCenterX;
-      const dy     = e.clientY - rotCenterY;
-      rotStartAngle = Math.atan2(dy, dx) * 180 / Math.PI - boxRotation[rotBoxId];
-      mode   = 'rotate';
+      if (e.target.classList.contains('rotate-handle')) return;
+      mode   = e.target.classList.contains('resize-handle') ? 'resize' : 'drag';
       active = box;
+      startX = e.clientX; startY = e.clientY;
+      startL = parseInt(box.style.left); startT = parseInt(box.style.top);
+      startW = parseInt(box.style.width)  || box.offsetWidth;
+      startH = parseInt(box.style.height) || box.offsetHeight;
       e.preventDefault();
-      e.stopPropagation();
     });
+    box.querySelector('.rotate-handle').addEventListener('mousedown', e => {
+      rotBoxId = id;
+      const rect = box.getBoundingClientRect();
+      rotCenterX = rect.left + rect.width / 2;
+      rotCenterY = rect.top  + rect.height / 2;
+      const dx = e.clientX - rotCenterX, dy = e.clientY - rotCenterY;
+      rotStartAngle = Math.atan2(dy, dx) * 180 / Math.PI - (boxRotation[id] || 0);
+      mode = 'rotate'; active = box;
+      e.preventDefault(); e.stopPropagation();
+    });
+  }
+
+  wrapper.addEventListener('mousemove', e => {
+    const rect = img.getBoundingClientRect();
+    const scaleX = img.naturalWidth / rect.width;
+    document.getElementById('mx').textContent = Math.round((e.clientX - rect.left) * scaleX);
+    document.getElementById('my').textContent = Math.round((e.clientY - rect.top)  * (img.naturalHeight / rect.height));
+    document.getElementById('scale').textContent = scaleX.toFixed(2);
   });
 
   document.addEventListener('mousemove', e => {
@@ -209,9 +227,7 @@
       active.style.width  = Math.max(40, startW + e.clientX - startX) + 'px';
       active.style.height = Math.max(20, startH + e.clientY - startY) + 'px';
     } else if (mode === 'rotate') {
-      const dx  = e.clientX - rotCenterX;
-      const dy  = e.clientY - rotCenterY;
-      const deg = Math.atan2(dy, dx) * 180 / Math.PI - rotStartAngle;
+      const deg = Math.atan2(e.clientY - rotCenterY, e.clientX - rotCenterX) * 180 / Math.PI - rotStartAngle;
       boxRotation[rotBoxId] = deg;
       active.style.transform = `rotate(${deg}deg)`;
       document.getElementById('rot').textContent = Math.round(deg);
@@ -222,25 +238,27 @@
 
   // ── Coördinaten exporteren ──
   function copyCoords() {
-    const rect   = img.getBoundingClientRect();
+    const rect = img.getBoundingClientRect();
     const scaleX = img.naturalWidth  / rect.width;
     const scaleY = img.naturalHeight / rect.height;
-
-    const boxes = ['144','149','239','243','249'];
-    const out = boxes.map(id => {
+    const rooms  = Object.keys(FLOORS[currentFloor].rooms);
+    const out = rooms.map(id => {
       const b = document.getElementById('box-' + id);
+      if (!b) return '';
       const l = Math.round(parseInt(b.style.left) * scaleX);
       const t = Math.round(parseInt(b.style.top)  * scaleY);
-      const w = Math.round(b.offsetWidth           * scaleX);
-      const h = Math.round(b.offsetHeight          * scaleY);
+      const w = Math.round(b.offsetWidth  * scaleX);
+      const h = Math.round(b.offsetHeight * scaleY);
       const r = Math.round(boxRotation[id] || 0);
       return `${id}: x=${l}, y=${t}, breedte=${w}, hoogte=${h}, rotate=${r}`;
     }).join('\n');
-
     document.getElementById('output').textContent = out;
     navigator.clipboard?.writeText(out).catch(() => {});
     alert('Coördinaten staan hieronder!\nKopieer ze en stuur ze naar mij zodat ik de website kan updaten.');
   }
+
+  // Laad beginvloer
+  loadFloor();
 </script>
 </body>
 </html>

@@ -79,6 +79,9 @@
             <div class="room-overlay vrij sensor-room" id="room-249" onclick="selectRoom('249')">
               <span class="room-badge">L01.249</span>
             </div>
+            <div class="room-overlay vrij sensor-room" id="room-expo" onclick="selectRoom('expo')">
+              <span class="room-badge">Expo</span>
+            </div>
 
           </div>
 
@@ -280,6 +283,24 @@
                   <button class="so-btn so-bezet" id="so-249-bezet" onclick="adminOverride('249','bezet')">Bezet</button>
                   <button class="so-btn so-vrij"  id="so-249-vrij"  onclick="adminOverride('249','vrij')">Vrij</button>
                   <button class="so-btn so-auto active" id="so-249-auto" onclick="adminOverride('249',null)">Sensor</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="sensor-card-admin">
+              <div class="sensor-card-top">
+                <div>
+                  <div class="sensor-room-label">Expo (PV BG)</div>
+                  <div class="sensor-last-seen" id="sensor-last-expo">Nog geen bericht ontvangen</div>
+                </div>
+                <span class="sensor-health unknown" id="sensor-health-expo">Onbekend</span>
+              </div>
+              <div class="sensor-override-row">
+                <span class="sensor-override-label">Instellen:</span>
+                <div class="sensor-override-btns">
+                  <button class="so-btn so-bezet" id="so-expo-bezet" onclick="adminOverride('expo','bezet')">Bezet</button>
+                  <button class="so-btn so-vrij"  id="so-expo-vrij"  onclick="adminOverride('expo','vrij')">Vrij</button>
+                  <button class="so-btn so-auto active" id="so-expo-auto" onclick="adminOverride('expo',null)">Sensor</button>
                 </div>
               </div>
             </div>
