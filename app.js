@@ -814,13 +814,9 @@ const fpContainer = document.getElementById('fp-container');
 
 function applyTransform() {
   fpContainer.style.transform = `translate(${panX}px,${panY}px) scale(${scale})`;
-  // Badges visueel altijd ~9px, ongeacht zoom
-  const fs = +(9 / scale).toFixed(2);
-  const p1 = +(1 / scale).toFixed(2);
-  const p2 = +(4 / scale).toFixed(2);
+  const inv = +(1 / scale).toFixed(4);
   document.querySelectorAll('.room-badge').forEach(b => {
-    b.style.fontSize = fs + 'px';
-    b.style.padding  = `${p1}px ${p2}px`;
+    b.style.transform = `scale(${inv})`;
   });
 }
 
