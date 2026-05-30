@@ -872,8 +872,10 @@ document.addEventListener('mousemove', e => {
 document.addEventListener('mouseup', () => { isDragging = false; });
 
 let lastTouchDist = 0;
+let touchTarget = null;
 zoomWrapper.addEventListener('touchstart', e => {
   e.preventDefault();
+  touchTarget = e.target;
   if (e.touches.length === 1) {
     isDragging = true; didDrag = false;
     dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
@@ -897,7 +899,14 @@ zoomWrapper.addEventListener('touchmove', e => {
     if (didDrag) { panX = panStartX + dx; panY = panStartY + dy; constrainPan(); applyTransform(); }
   }
 }, { passive: false });
-zoomWrapper.addEventListener('touchend', () => { isDragging = false; });
+zoomWrapper.addEventListener('touchend', () => {
+  isDragging = false;
+  if (!didDrag && touchTarget) {
+    const overlay = touchTarget.closest('.room-overlay');
+    if (overlay) selectRoom(overlay.id.replace('room-', ''));
+  }
+  touchTarget = null;
+});
 
 
 // ══════════════════════════════════════════════════════════════════════
