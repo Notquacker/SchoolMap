@@ -839,8 +839,8 @@ body.dark .sensor-health.manual { background: #0a1a2a; color: #64b5f6; }
 body.dark .sensor-health.unknown{ background: #2a2d40; color: #666; }
 
 /* ── MQTT log ── */
-.mqtt-log-group { margin-bottom: 14px; }
-.mqtt-log-group:last-child { margin-bottom: 0; }
+#mqtt-log { display: flex; gap: 16px; flex-wrap: wrap; }
+.mqtt-log-group { flex: 1; min-width: 200px; margin-bottom: 0; }
 .mqtt-log-group-title {
   font-size: .7rem;
   font-weight: 700;
