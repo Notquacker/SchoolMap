@@ -553,10 +553,40 @@ async function deleteReservation(id) {
   if (currentUser) loadAllReservations();
 }
 
+const TIME_SLOTS = (() => {
+  const s = [];
+  for (let h = 8; h <= 18; h++) {
+    s.push(`${String(h).padStart(2,'0')}:00`);
+    if (h < 18) s.push(`${String(h).padStart(2,'0')}:30`);
+  }
+  return s;
+})();
+
+function renderTimePicker(pickerId, inputId, selected) {
+  const picker = document.getElementById(pickerId);
+  if (!picker) return;
+  picker.innerHTML = TIME_SLOTS.map(t =>
+    `<button type="button" class="time-slot${t === selected ? ' active' : ''}"
+     data-time="${t}" onclick="selectTime('${pickerId}','${inputId}','${t}')">${t}</button>`
+  ).join('');
+}
+
+function selectTime(pickerId, inputId, time) {
+  document.getElementById(inputId).value = time;
+  document.querySelectorAll(`#${pickerId} .time-slot`).forEach(b =>
+    b.classList.toggle('active', b.dataset.time === time)
+  );
+}
+
 function openModal(roomId) {
   document.getElementById('modal-room-label').textContent = ROOMS[roomId]?.label || roomId;
   document.getElementById('res-datum').value = todayStr();
+  document.getElementById('res-naam').value  = '';
+  document.getElementById('res-stunum').value = '';
+  document.getElementById('res-doel').value  = '';
   document.getElementById('modal-overlay').classList.remove('hidden');
+  renderTimePicker('van-picker', 'res-van', '09:00');
+  renderTimePicker('tot-picker', 'res-tot', '11:00');
   document.getElementById('res-naam').focus();
   document.getElementById('reserveer-form').onsubmit = e => submitReservation(e, roomId);
 }
@@ -573,10 +603,11 @@ async function submitReservation(e, roomId) {
   if (van >= tot) { alert('Eindtijd moet na begintijd zijn.'); return; }
   await API.post('/api/reservations', {
     roomId,
-    naam:  document.getElementById('res-naam').value.trim(),
-    datum: document.getElementById('res-datum').value,
+    naam:          document.getElementById('res-naam').value.trim(),
+    studentnummer: document.getElementById('res-stunum').value.trim(),
+    datum:         document.getElementById('res-datum').value,
     van, tot,
-    doel:  document.getElementById('res-doel').value.trim(),
+    doel:          document.getElementById('res-doel').value.trim(),
   });
   closeModal();
   await refreshCache();

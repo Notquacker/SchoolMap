@@ -351,17 +351,24 @@
     <div class="modal" onclick="event.stopPropagation()">
       <h3>Reserveer lokaal <span id="modal-room-label"></span></h3>
       <form id="reserveer-form">
-        <label>Naam / groep
-          <input type="text" id="res-naam" required placeholder="bijv. Klas 2A" />
-        </label>
+        <div class="res-form-row">
+          <label>Naam
+            <input type="text" id="res-naam" required placeholder="Voor- en achternaam" />
+          </label>
+          <label>Studentnummer
+            <input type="text" id="res-stunum" required placeholder="bijv. 12345678" inputmode="numeric" />
+          </label>
+        </div>
         <label>Datum
           <input type="date" id="res-datum" required />
         </label>
         <label>Van
-          <input type="time" id="res-van" required value="09:00" />
+          <div class="time-picker" id="van-picker"></div>
+          <input type="time" id="res-van" required value="09:00" class="time-input-hidden"/>
         </label>
         <label>Tot
-          <input type="time" id="res-tot" required value="11:00" />
+          <div class="time-picker" id="tot-picker"></div>
+          <input type="time" id="res-tot" required value="11:00" class="time-input-hidden"/>
         </label>
         <label>Doel
           <input type="text" id="res-doel" placeholder="bijv. Practicum, Les, Vergadering" />

@@ -35,14 +35,15 @@ def init_db():
                 created_at TEXT
             );
             CREATE TABLE IF NOT EXISTS reservations (
-                id         TEXT PRIMARY KEY,
-                room_id    TEXT,
-                naam       TEXT,
-                datum      TEXT,
-                van        TEXT,
-                tot        TEXT,
-                doel       TEXT,
-                created_at TEXT
+                id             TEXT PRIMARY KEY,
+                room_id        TEXT,
+                naam           TEXT,
+                studentnummer  TEXT,
+                datum          TEXT,
+                van            TEXT,
+                tot            TEXT,
+                doel           TEXT,
+                created_at     TEXT
             );
             CREATE TABLE IF NOT EXISTS rooster (
                 id          TEXT PRIMARY KEY,
@@ -60,6 +61,12 @@ def init_db():
             'INSERT OR IGNORE INTO users (username, password, role) VALUES (?,?,?)',
             ('admin', generate_password_hash('School2026!'), 'admin')
         )
+        # Migratie: voeg studentnummer toe aan bestaande databases
+        try:
+            db.execute('ALTER TABLE reservations ADD COLUMN studentnummer TEXT DEFAULT ""')
+            db.commit()
+        except Exception:
+            pass
         db.commit()
 
 
@@ -137,12 +144,13 @@ def add_reservation():
     d = request.json or {}
     entry = (
         str(uuid.uuid4()), d.get('roomId',''), d.get('naam',''),
+        d.get('studentnummer',''),
         d.get('datum',''), d.get('van',''), d.get('tot',''),
         d.get('doel',''), datetime.now().isoformat()
     )
     with get_db() as db:
         db.execute(
-            'INSERT INTO reservations VALUES (?,?,?,?,?,?,?,?)', entry
+            'INSERT INTO reservations VALUES (?,?,?,?,?,?,?,?,?)', entry
         )
         db.commit()
     return jsonify({'ok': True, 'id': entry[0]})
