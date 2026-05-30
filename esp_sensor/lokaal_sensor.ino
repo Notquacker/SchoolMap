@@ -33,7 +33,9 @@ void reconnect() {
     Serial.print("Verbinden met HiveMQ...");
     // Unieke client-ID per apparaat (gebruik lokaal-ID)
     String clientId = "ESP_Lokaal_" + String(LOKAAL_ID);
-    if (client.connect(clientId.c_str(), mqtt_user, mqtt_password)) {
+    // LWT: als de ESP wegvalt stuurt HiveMQ automatisch bezet:false
+    if (client.connect(clientId.c_str(), mqtt_user, mqtt_password,
+                       mqttTopic, 1, true, "{\"bezet\":false}")) {
       Serial.println(" verbonden!");
       // Publiceer meteen de huidige staat na reconnect
       publishStatus(digitalRead(PIR_PIN) == HIGH);

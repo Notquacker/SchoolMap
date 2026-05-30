@@ -775,6 +775,69 @@ body.dark .zoom-controls button:hover { background: #2e3250; }
 body.dark .fp-legend .leg.sensor { background: rgba(200,200,200,.25); color: #bbb; }
 body.dark .login-error { color: #ef9a9a; }
 
+/* ── Sensor overzicht (admin) ── */
+.sensor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 640px) { .sensor-grid { grid-template-columns: 1fr; } }
+
+.sensor-card-admin {
+  background: #f5f6fa;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1.5px solid #e0e4ef;
+}
+.sensor-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  gap: 8px;
+}
+.sensor-room-label { font-size: 1rem; font-weight: 700; color: #222; margin-bottom: 4px; }
+.sensor-last-seen  { font-size: .72rem; color: #888; font-family: monospace; }
+
+.sensor-health {
+  font-size: .7rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 12px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.sensor-health.online  { background: #e8f5e9; color: #2e7d32; }
+.sensor-health.error   { background: #fce4ec; color: #b71c1c; }
+.sensor-health.manual  { background: #e3f2fd; color: #1565c0; }
+.sensor-health.unknown { background: #eeeeee; color: #888; }
+
+.sensor-override-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.sensor-override-label { font-size: .75rem; color: #666; font-weight: 600; }
+.sensor-override-btns  { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.so-btn {
+  padding: 4px 12px;
+  border: 2px solid; border-radius: 16px;
+  font-size: .78rem; font-weight: 700;
+  cursor: pointer; background: none;
+  transition: background .15s, color .15s;
+}
+.so-bezet { border-color: #c62828; color: #c62828; }
+.so-bezet:hover, .so-bezet.active { background: #c62828; color: white; }
+.so-vrij  { border-color: #2e7d32; color: #2e7d32; }
+.so-vrij:hover,  .so-vrij.active  { background: #2e7d32; color: white; }
+.so-auto  { border-color: #1565c0; color: #1565c0; }
+.so-auto:hover,  .so-auto.active  { background: #1565c0; color: white; }
+
+body.dark .sensor-card-admin    { background: #252840; border-color: #3a3d55; }
+body.dark .sensor-room-label    { color: #d0d4e0; }
+body.dark .sensor-last-seen     { color: #555; }
+body.dark .sensor-override-label{ color: #666; }
+body.dark .sensor-health.online { background: #1b3a1f; color: #81c784; }
+body.dark .sensor-health.error  { background: #2a0a10; color: #ef9a9a; }
+body.dark .sensor-health.manual { background: #0a1a2a; color: #64b5f6; }
+body.dark .sensor-health.unknown{ background: #2a2d40; color: #666; }
+
 /* ── MQTT log ── */
 .mqtt-log-row {
   display: flex;

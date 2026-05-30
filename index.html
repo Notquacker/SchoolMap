@@ -245,7 +245,50 @@
         </div>
 
         <div class="admin-section">
-          <h2>MQTT berichten</h2>
+          <h2>Sensor overzicht</h2>
+          <div class="sensor-grid">
+
+            <div class="sensor-card-admin">
+              <div class="sensor-card-top">
+                <div>
+                  <div class="sensor-room-label">L01.243</div>
+                  <div class="sensor-last-seen" id="sensor-last-243">Nog geen bericht ontvangen</div>
+                </div>
+                <span class="sensor-health unknown" id="sensor-health-243">Onbekend</span>
+              </div>
+              <div class="sensor-override-row">
+                <span class="sensor-override-label">Instellen:</span>
+                <div class="sensor-override-btns">
+                  <button class="so-btn so-bezet" id="so-243-bezet" onclick="adminOverride('243','bezet')">Bezet</button>
+                  <button class="so-btn so-vrij"  id="so-243-vrij"  onclick="adminOverride('243','vrij')">Vrij</button>
+                  <button class="so-btn so-auto active" id="so-243-auto" onclick="adminOverride('243',null)">Sensor</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="sensor-card-admin">
+              <div class="sensor-card-top">
+                <div>
+                  <div class="sensor-room-label">L01.249</div>
+                  <div class="sensor-last-seen" id="sensor-last-249">Nog geen bericht ontvangen</div>
+                </div>
+                <span class="sensor-health unknown" id="sensor-health-249">Onbekend</span>
+              </div>
+              <div class="sensor-override-row">
+                <span class="sensor-override-label">Instellen:</span>
+                <div class="sensor-override-btns">
+                  <button class="so-btn so-bezet" id="so-249-bezet" onclick="adminOverride('249','bezet')">Bezet</button>
+                  <button class="so-btn so-vrij"  id="so-249-vrij"  onclick="adminOverride('249','vrij')">Vrij</button>
+                  <button class="so-btn so-auto active" id="so-249-auto" onclick="adminOverride('249',null)">Sensor</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="admin-section">
+          <h2>MQTT berichtenlog</h2>
           <div id="mqtt-log"><p class="hint">Nog geen berichten ontvangen.</p></div>
         </div>
 

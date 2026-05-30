@@ -266,12 +266,78 @@ function updateMqttStatus(state, text) {
   if (textEl) { textEl.textContent = text; }
 }
 
+// ── Sensor tracking ───────────────────────────────────────────────────
+const SENSOR_ROOMS   = ['243', '249'];
+const lastMqttMsg    = {};   // roomId → { time: Date, payload, bezet }
+const sensorOverride = {};   // roomId → 'bezet' | 'vrij' | null (null = sensor volgen)
+const SENSOR_TIMEOUT_MIN = 3;
+
+function renderSensorCard(roomId) {
+  const msg      = lastMqttMsg[roomId];
+  const override = sensorOverride[roomId];
+  const lastEl   = document.getElementById('sensor-last-' + roomId);
+  const healthEl = document.getElementById('sensor-health-' + roomId);
+
+  if (lastEl) {
+    lastEl.textContent = msg
+      ? `${msg.time.toLocaleTimeString('nl-NL')} — ${msg.payload}`
+      : 'Nog geen bericht ontvangen';
+  }
+  if (healthEl) {
+    if (override != null) {
+      healthEl.textContent = `Handmatig (${override})`;
+      healthEl.className   = 'sensor-health manual';
+    } else if (!msg) {
+      healthEl.textContent = 'Onbekend';
+      healthEl.className   = 'sensor-health unknown';
+    } else {
+      const minAgo = Math.floor((Date.now() - msg.time) / 60000);
+      if (minAgo >= SENSOR_TIMEOUT_MIN) {
+        healthEl.textContent = `Geen signaal (${minAgo}m geleden)`;
+        healthEl.className   = 'sensor-health error';
+      } else {
+        healthEl.textContent = 'Online';
+        healthEl.className   = 'sensor-health online';
+      }
+    }
+  }
+  ['bezet', 'vrij', 'auto'].forEach(state => {
+    const btn = document.getElementById(`so-${roomId}-${state}`);
+    if (!btn) return;
+    const isActive = state === 'auto' ? override == null : override === state;
+    btn.classList.toggle('active', isActive);
+  });
+}
+
+function adminOverride(roomId, status) {
+  if (status === null) {
+    delete sensorOverride[roomId];
+    if (lastMqttMsg[roomId]) setRoomStatus(roomId, lastMqttMsg[roomId].bezet ? 'bezet' : 'vrij');
+  } else {
+    sensorOverride[roomId] = status;
+    setRoomStatus(roomId, status);
+  }
+  renderSensorCard(roomId);
+}
+
+// ── MQTT log ───────────────────────────────────────────────────────────
 const mqttLog = [];
 function mqttLogAdd(topic, payload) {
   const time = new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   mqttLog.unshift({ time, topic, payload });
-  if (mqttLog.length > 20) mqttLog.pop();
+  if (mqttLog.length > 30) mqttLog.pop();
   renderMqttLog();
+
+  const parts  = topic.replace(MQTT_TOPIC_BASE, '').split('/');
+  const roomId = parts[0];
+  if (SENSOR_ROOMS.includes(roomId)) {
+    const low = payload.toLowerCase();
+    let bezet;
+    try { bezet = JSON.parse(low).bezet; }
+    catch { bezet = low === 'true' || low === '1' || low === 'bezet'; }
+    lastMqttMsg[roomId] = { time: new Date(), payload, bezet };
+    renderSensorCard(roomId);
+  }
 }
 function renderMqttLog() {
   const el = document.getElementById('mqtt-log');
@@ -304,10 +370,12 @@ function connectMqtt() {
       const txt = message.toString().trim();
       mqttLogAdd(topic, txt);
 
-      // Haal kamer-ID op: werkt voor school/lokaalbezetting/243, .../243/status, etc.
       const parts  = topic.replace(MQTT_TOPIC_BASE, '').split('/');
       const roomId = parts[0];
       if (!ROOMS[roomId]) return;
+
+      // Admin override actief — negeer MQTT voor deze kamer
+      if (sensorOverride[roomId] != null) return;
 
       const low = txt.toLowerCase();
       let bezet;
@@ -319,6 +387,9 @@ function connectMqtt() {
     updateMqttStatus('disconnected', 'Niet beschikbaar');
   }
 }
+
+// Health check elke 15 seconden
+setInterval(() => SENSOR_ROOMS.forEach(renderSensorCard), 15000);
 
 
 // ══════════════════════════════════════════════════════════════════════
