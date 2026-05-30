@@ -105,9 +105,10 @@ function loadFloor() {
   const image = getCurrentImage();
   const img   = document.getElementById('fp-img');
 
-  const hasRooms = Object.keys(getCurrentRooms()).length > 0;
+  const currentRooms = getCurrentRooms();
   document.querySelectorAll('.room-overlay').forEach(el => {
-    el.style.display = hasRooms ? '' : 'none';
+    const roomId = el.id.replace('room-', '');
+    el.style.display = currentRooms[roomId] ? '' : 'none';
   });
 
   const placeholder = document.getElementById('no-map-msg');
