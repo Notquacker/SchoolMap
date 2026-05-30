@@ -12,7 +12,7 @@ const ROOM_COORDS_MP_1E = {
 
 // PV begane grond — gebruik calibrate.html om exacte positie te bepalen
 const ROOM_COORDS_PV_BG = {
-  'expo': { x: 600, y: 700, w: 300, h: 200, rotate: 0 },
+  'expo': { x: 1201, y: 1306, w: 66, h: 36, rotate: 18 },
 };
 
 // ── Room configuration ────────────────────────────────────────────────
