@@ -873,6 +873,7 @@ document.addEventListener('mouseup', () => { isDragging = false; });
 
 let lastTouchDist = 0;
 zoomWrapper.addEventListener('touchstart', e => {
+  e.preventDefault();
   if (e.touches.length === 1) {
     isDragging = true; didDrag = false;
     dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
@@ -881,10 +882,10 @@ zoomWrapper.addEventListener('touchstart', e => {
     isDragging = false;
     lastTouchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
   }
-}, { passive: true });
+}, { passive: false });
 zoomWrapper.addEventListener('touchmove', e => {
+  e.preventDefault();
   if (e.touches.length === 2) {
-    e.preventDefault();
     const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
     const r = zoomWrapper.getBoundingClientRect();
     zoomAt((e.touches[0].clientX + e.touches[1].clientX)/2 - r.left,
