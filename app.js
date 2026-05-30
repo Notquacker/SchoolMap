@@ -541,7 +541,7 @@ function renderReservationsList() {
 
   el.innerHTML = list.map(r => `
     <div class="res-item ${r.type === 'roo' ? 'rooster-item' : ''}">
-      <button class="res-delete" onclick="${r.type === 'roo' ? 'deleteRoosterEntry' : 'deleteReservation'}('${r.id}')">✕</button>
+      ${currentUser ? `<button class="res-delete" onclick="${r.type === 'roo' ? 'deleteRoosterEntry' : 'deleteReservation'}('${r.id}')">✕</button>` : ''}
       <div class="res-header">${r.van}–${r.tot}</div>
       <div class="res-sub">${r.label}</div>
     </div>`).join('');
