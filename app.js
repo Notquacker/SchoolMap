@@ -32,19 +32,19 @@ const MQTT_TOPIC_BASE = 'school/lokaalbezetting/';
 
 // ── Gebouw & verdieping configuratie ─────────────────────────────────
 const BUILDINGS = {
-  'mp': {
-    name: 'Museumpark',
+  'LB': {
+    name: 'Laagbouw',
     floors: [
-      { id: 'bg', label: 'BG', image: 'Plattegrond/MP/BEGANE_GROND_A.png' },
-      { id: '1e', label: '1e', image: 'Plattegrond/MP/1E_VERDIEPING_A.png' },
+      { id: 'bg', label: 'BG', image: 'Plattegrond/Laagbouw/BEGANE_GROND_A.png' },
+      { id: '1e', label: '1e', image: 'Plattegrond/Laagbouw/1E_VERDIEPING_A.png' },
       { id: '2e', label: '2e', image: null },
       { id: '3e', label: '3e', image: null },
     ]
   },
-  'pv': {
-    name: 'Paviljoen',
+  'HB': {
+    name: 'Hoogbouw',
     floors: [
-      { id: 'bg', label: 'BG', image: 'Plattegrond/PV/BEGANE_GROND_OTHER.png' },
+      { id: 'bg', label: 'BG', image: 'Plattegrond/Hoogbouw/BEGANE_GROND_OTHER.png' },
       { id: '1e', label: '1e', image: null },
       { id: '2e', label: '2e', image: null },
     ]
@@ -53,11 +53,11 @@ const BUILDINGS = {
 
 // Kamer-coördinaten per gebouw_verdieping combinatie
 const FLOOR_ROOMS = {
-  'mp_1e': ROOM_COORDS_MP_1E,
-  'pv_bg': ROOM_COORDS_PV_BG,
+  'LB_1e': ROOM_COORDS_MP_1E,
+  'HB_bg': ROOM_COORDS_PV_BG,
 };
 
-let currentBuilding = 'mp';
+let currentBuilding = 'LB';
 let currentFloor    = '1e';
 
 function floorKey()        { return `${currentBuilding}_${currentFloor}`; }
