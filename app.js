@@ -65,8 +65,8 @@ function getCurrentRooms() { return FLOOR_ROOMS[floorKey()] || {}; }
 function getCurrentImage() {
   const f = BUILDINGS[currentBuilding]?.floors.find(f => f.id === currentFloor);
   if (!f) return null;
-  const isDark = document.body.classList.contains('dark');
-  return (isDark && f.imageDark) ? f.imageDark : (f.image || null);
+  const isLight = document.body.classList.contains('light');
+  return (!isLight && f.imageDark) ? f.imageDark : (f.image || null);
 }
 
 function initMapSwitcher() {
@@ -273,11 +273,37 @@ function closeMenu() {
 // CLOCK
 // ══════════════════════════════════════════════════════════════════════
 function updateClock() {
-  document.getElementById('clock').textContent =
-    new Date().toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  const now = new Date();
+  const timeEl = document.getElementById('info-time');
+  const dateEl = document.getElementById('info-date');
+  if (timeEl) timeEl.textContent = now.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('nl-NL', { weekday:'short', day:'numeric', month:'short' });
 }
 setInterval(updateClock, 1000);
 updateClock();
+
+function updateInfoSidebar() {
+  const ids = Object.keys(ROOMS);
+  const freeCount = ids.filter(id => roomStatus[id] === 'vrij').length;
+  const freeEl  = document.getElementById('info-free-count');
+  const totalEl = document.getElementById('info-total-count');
+  const listEl  = document.getElementById('info-room-list');
+  if (freeEl)  freeEl.textContent  = freeCount;
+  if (totalEl) totalEl.textContent = ids.length;
+  if (!listEl) return;
+  listEl.innerHTML = ids.map(id => {
+    const room   = ROOMS[id];
+    const status = roomStatus[id] || 'vrij';
+    const isSensor = room.sensor;
+    const dotClass = status === 'vrij' && isSensor ? 'vrij sensor' : status;
+    const label = status === 'vrij' ? 'Vrij' : status === 'bezet' ? 'Bezet' : 'Ingeroosterd';
+    return `<div class="info-room-item">
+      <span class="info-room-dot ${dotClass}"></span>
+      <span class="info-room-name">${room.label}</span>
+      <span class="info-room-status-label">${label}</span>
+    </div>`;
+  }).join('');
+}
 
 
 // ══════════════════════════════════════════════════════════════════════
@@ -439,12 +465,21 @@ setInterval(() => SENSOR_ROOMS.forEach(renderSensorCard), 15000);
 // ══════════════════════════════════════════════════════════════════════
 function setRoomStatus(roomId, status) {
   if (roomStatus[roomId] === 'gereserveerd' && status === 'vrij') return;
+  const changed = roomStatus[roomId] !== status;
   roomStatus[roomId] = status;
   const el = document.getElementById('room-' + roomId);
-  if (!el) return;
-  el.classList.remove('vrij', 'bezet', 'gereserveerd');
-  el.classList.add(status);
+  if (el) {
+    el.classList.remove('vrij', 'bezet', 'gereserveerd');
+    el.classList.add(status);
+    if (changed) {
+      el.classList.remove('status-flash');
+      void el.offsetWidth; // reflow to restart animation
+      el.classList.add('status-flash');
+      setTimeout(() => el.classList.remove('status-flash'), 600);
+    }
+  }
   if (selectedRoom === roomId) renderDetail(roomId);
+  updateInfoSidebar();
 }
 
 function initRoomClasses() {
@@ -464,6 +499,7 @@ function refreshAllStatuses() {
       (r.room_id || r.roomId) === id && r.van <= hhmm && r.tot > hhmm);
     setRoomStatus(id, (hasRes || hasRoo) ? 'gereserveerd' : 'vrij');
   });
+  updateInfoSidebar();
 }
 
 
@@ -864,7 +900,7 @@ function adminNewReservation() {
 let scale = 1, panX = 0, panY = 0;
 let isDragging = false, didDrag = false;
 let dragStartX, dragStartY, panStartX, panStartY;
-const MIN_SCALE = 0.05, MAX_SCALE = 10;
+let MIN_SCALE = 0.05; const MAX_SCALE = 10;
 
 const zoomWrapper = document.getElementById('zoom-wrapper');
 const fpContainer = document.getElementById('fp-container');
@@ -896,10 +932,15 @@ function resetZoom() {
   const img = document.getElementById('fp-img');
   const W = img.naturalWidth, H = img.naturalHeight;
   if (!W || !H) { scale = 1; panX = 0; panY = 0; applyTransform(); return; }
-  const vw = zoomWrapper.offsetWidth  || window.innerWidth  - 32;
-  const vh = zoomWrapper.offsetHeight || 400;
-  const imgHatOne = vw * H / W;
-  scale = imgHatOne <= vh ? 1 : vh / imgHatOne;
+  const vw = zoomWrapper.offsetWidth || window.innerWidth - 32;
+  // Stel hoogte in op exacte afbeeldingsverhouding, max 80% van viewport
+  const idealH = Math.round(vw * H / W);
+  const maxH   = Math.round(window.innerHeight * 0.80);
+  zoomWrapper.style.height = Math.min(idealH, maxH) + 'px';
+  const vh = zoomWrapper.offsetHeight;
+  scale = idealH <= maxH ? 1 : vh / idealH;
+  MIN_SCALE = scale; // gebruiker kan niet verder uitzoomen dan startpositie
+  panX = 0; panY = 0;
   constrainPan();
   applyTransform();
 }
@@ -1034,13 +1075,14 @@ setTimeout(setupOverlays, 1000);
 // ══════════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════════
-if (localStorage.getItem('darkMode') === '1') {
-  document.body.classList.add('dark');
+if (localStorage.getItem('lightMode') === '1') {
+  document.body.classList.add('light');
   const btn = document.getElementById('dark-toggle-btn');
-  if (btn) btn.textContent = 'Lichte modus';
+  if (btn) btn.textContent = 'Donkere modus';
 }
 initRoomClasses();
 initMapSwitcher();
+updateInfoSidebar();
 
 // Kortere labels op mobiel
 if (window.innerWidth <= 768) {
@@ -1050,12 +1092,12 @@ if (window.innerWidth <= 768) {
   });
 }
 
-// ── Dark mode ─────────────────────────────────────────────────────────
+// ── Dark mode (dark is standaard; light = toggle) ─────────────────────
 function toggleDarkMode() {
-  const isDark = document.body.classList.toggle('dark');
-  localStorage.setItem('darkMode', isDark ? '1' : '0');
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('lightMode', isLight ? '1' : '0');
   const btn = document.getElementById('dark-toggle-btn');
-  if (btn) btn.textContent = isDark ? 'Lichte modus' : 'Donkere modus';
+  if (btn) btn.textContent = isLight ? 'Donkere modus' : 'Lichte modus';
   loadFloor();
 }
 connectMqtt();

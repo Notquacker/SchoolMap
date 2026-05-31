@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lokaalbezetting – Museumpark</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -16,7 +19,6 @@
       <span class="subtitle">Museumpark</span>
     </div>
     <div class="header-right">
-      <div id="clock"></div>
       <button id="burger-btn" onclick="toggleMenu()" aria-label="Menu">☰</button>
     </div>
   </header>
@@ -50,9 +52,44 @@
         </div>
         <button class="sidebar-logout-btn" onclick="handleLogout()">Uitloggen</button>
       </div>
-      <button class="sidebar-dark-btn" id="dark-toggle-btn" onclick="toggleDarkMode()">Donkere modus</button>
+      <button class="sidebar-dark-btn" id="dark-toggle-btn" onclick="toggleDarkMode()">Lichte modus</button>
     </div>
   </nav>
+
+  <div class="page-wrapper">
+
+  <!-- ── Info sidebar (links) ─────────────────────────────────────────── -->
+  <aside id="info-sidebar">
+    <div class="info-clock-block">
+      <div class="info-time" id="info-time">00:00</div>
+      <div class="info-date" id="info-date">–</div>
+    </div>
+
+    <div class="info-counter-block">
+      <div class="info-free-num" id="info-free-count">–</div>
+      <div class="info-free-label">van <span id="info-total-count">–</span> lokalen vrij</div>
+    </div>
+
+    <div>
+      <div class="info-section-title">Lokalen</div>
+      <div id="info-room-list"></div>
+    </div>
+
+    <div>
+      <div class="info-section-title">Legenda</div>
+      <div class="info-legend-item"><span class="info-leg-swatch vrij"></span>Vrij</div>
+      <div class="info-legend-item"><span class="info-leg-swatch sensor"></span>Vrij (live sensor)</div>
+      <div class="info-legend-item"><span class="info-leg-swatch bezet"></span>Bezet</div>
+      <div class="info-legend-item"><span class="info-leg-swatch gereserveerd"></span>Ingeroosterd</div>
+    </div>
+
+    <div class="sidebar-res-block">
+      <div class="info-section-title">Vandaag gereserveerd</div>
+      <div id="reservations-list">
+        <p class="hint">Geen items gevonden.</p>
+      </div>
+    </div>
+  </aside>
 
   <main>
 
@@ -60,13 +97,7 @@
     <div id="tab-plattegrond" class="tab-content">
 
       <div class="intro-banner">
-        <p>Bekijk hier realtime welke lokalen vrij, bezet of ingeroosterd zijn in het Museumpark. Klik op een lokaal op de plattegrond om details te zien of een reservering te maken. Lokalen met een live sensor worden automatisch bijgewerkt via IoT-sensoren.</p>
-        <div class="intro-legend">
-          <span class="leg vrij">Vrij</span>
-          <span class="leg bezet">Bezet</span>
-          <span class="leg gereserveerd">Ingeroosterd / Gereserveerd</span>
-          <span class="leg sensor">Live sensor</span>
-        </div>
+        <p>Bekijk live welke lokalen beschikbaar zijn op de eerste verdieping. Klik op een lokaal om details te zien of een reservering te maken.</p>
       </div>
 
       <section class="plattegrond-wrapper">
@@ -121,21 +152,12 @@
 
       </section>
 
-      <section class="info-grid">
-        <div id="detail-panel" class="panel">
-          <h3 id="detail-title">Klik op een lokaal</h3>
-          <div id="detail-content">
-            <p class="hint">Selecteer een lokaal op de plattegrond om details en opties te zien.</p>
-          </div>
+      <div id="detail-panel" class="panel detail-panel-standalone">
+        <h3 id="detail-title">Klik op een lokaal</h3>
+        <div id="detail-content">
+          <p class="hint">Selecteer een lokaal op de plattegrond om details en opties te zien.</p>
         </div>
-
-        <div class="panel">
-          <h3>Vandaag ingeroosterd &amp; gereserveerd</h3>
-          <div id="reservations-list">
-            <p class="hint">Geen items gevonden.</p>
-          </div>
-        </div>
-      </section>
+      </div>
 
     </div><!-- /tab-plattegrond -->
 
@@ -356,6 +378,8 @@
     </div><!-- /tab-admin -->
 
   </main>
+
+  </div><!-- /page-wrapper -->
 
   <!-- Reservering modal -->
   <div id="modal-overlay" class="hidden" onclick="closeModal(event)">
