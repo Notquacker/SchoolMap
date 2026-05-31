@@ -35,18 +35,18 @@ const BUILDINGS = {
   'LB': {
     name: 'Laagbouw',
     floors: [
-      { id: '-1', label: '-1', image: null },
-      { id: 'bg', label: 'BG', image: 'Plattegrond/Laagbouw/BEGANE_GROND_A.png' },
-      { id: '1e', label: '1e', image: 'Plattegrond/Laagbouw/1E_VERDIEPING_A.png' },
-      { id: '2e', label: '2e', image: null },
+      { id: '-1', label: '-1', image: null,                                          imageDark: null },
+      { id: 'bg', label: 'BG', image: 'Plattegrond/Laagbouw/BEGANE_GROND_A.png',    imageDark: 'Plattegrond/Laagbouw/BEGANE_GROND_INV.png' },
+      { id: '1e', label: '1e', image: 'Plattegrond/Laagbouw/1E_VERDIEPING_A.png',   imageDark: 'Plattegrond/Laagbouw/1E_VERDIEPING_INV.png' },
+      { id: '2e', label: '2e', image: null,                                          imageDark: null },
     ]
   },
   'HB': {
     name: 'Hoogbouw',
     floors: [
-      { id: 'bg', label: 'BG', image: 'Plattegrond/Hoogbouw/BEGANE_GROND_OTHER.png' },
-      { id: '1e', label: '1e', image: null },
-      { id: '2e', label: '2e', image: null },
+      { id: 'bg', label: 'BG', image: 'Plattegrond/Hoogbouw/BEGANE_GROND_OTHER.png', imageDark: 'Plattegrond/Hoogbouw/BEGANE_GROND_INV.png' },
+      { id: '1e', label: '1e', image: null,                                           imageDark: null },
+      { id: '2e', label: '2e', image: null,                                           imageDark: null },
     ]
   }
 };
@@ -64,7 +64,9 @@ function floorKey()        { return `${currentBuilding}_${currentFloor}`; }
 function getCurrentRooms() { return FLOOR_ROOMS[floorKey()] || {}; }
 function getCurrentImage() {
   const f = BUILDINGS[currentBuilding]?.floors.find(f => f.id === currentFloor);
-  return f?.image || null;
+  if (!f) return null;
+  const isDark = document.body.classList.contains('dark');
+  return (isDark && f.imageDark) ? f.imageDark : (f.image || null);
 }
 
 function initMapSwitcher() {
@@ -1049,6 +1051,7 @@ function toggleDarkMode() {
   localStorage.setItem('darkMode', isDark ? '1' : '0');
   const btn = document.getElementById('dark-toggle-btn');
   if (btn) btn.textContent = isDark ? 'Lichte modus' : 'Donkere modus';
+  loadFloor();
 }
 if (localStorage.getItem('darkMode') === '1') {
   document.body.classList.add('dark');
