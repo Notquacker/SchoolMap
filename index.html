@@ -34,6 +34,22 @@
       <li><a class="sidebar-nav-link" data-tab="admin"       href="#" onclick="switchTab('admin');       closeMenu(); return false;">Admin</a></li>
     </ul>
     <div class="sidebar-bottom">
+      <!-- Inloggen (zichtbaar als uitgelogd) -->
+      <div id="sidebar-login-section">
+        <form class="sidebar-login-form" onsubmit="handleLoginForm(event,'login-'); return false;">
+          <input type="text"     id="login-user" autocomplete="username"         placeholder="Gebruikersnaam" required />
+          <input type="password" id="login-pass" autocomplete="current-password" placeholder="Wachtwoord"    required />
+          <div id="login-error" class="login-error"></div>
+          <button type="submit" class="btn-primary" id="login-btn">Inloggen</button>
+        </form>
+      </div>
+      <!-- Ingelogd als … (zichtbaar als ingelogd) -->
+      <div id="sidebar-user-section" style="display:none">
+        <div class="sidebar-user-bar">
+          Ingelogd als <strong id="sidebar-username"></strong>
+        </div>
+        <button class="sidebar-logout-btn" onclick="handleLogout()">Uitloggen</button>
+      </div>
       <button class="sidebar-dark-btn" id="dark-toggle-btn" onclick="toggleDarkMode()">Donkere modus</button>
     </div>
   </nav>
@@ -122,21 +138,6 @@
     <!-- ═══ TAB 2: ROOSTER UPLOADEN ═══ -->
     <div id="tab-rooster" class="tab-content" style="display:none">
 
-      <div id="rooster-login" class="login-card">
-        <h3>Inloggen vereist</h3>
-        <p>Alleen roostercommissie-leden kunnen roosterdata uploaden.</p>
-        <form id="login-form" onsubmit="handleLogin(event)">
-          <label>Gebruikersnaam
-            <input type="text" id="login-user" required autocomplete="username" placeholder="admin"/>
-          </label>
-          <label>Wachtwoord
-            <input type="password" id="login-pass" required autocomplete="current-password" placeholder="••••••••"/>
-          </label>
-          <div id="login-error" class="login-error"></div>
-          <button type="submit" class="btn-primary" id="login-btn">Inloggen</button>
-        </form>
-      </div>
-
       <div id="rooster-authenticated" style="display:none">
 
         <div class="user-bar">
@@ -204,21 +205,6 @@
 
     <!-- ═══ TAB 3: ADMIN ═══ -->
     <div id="tab-admin" class="tab-content" style="display:none">
-
-      <div id="admin-login" class="login-card">
-        <h3>Inloggen vereist</h3>
-        <p>Alleen beheerders kunnen de admin-pagina bekijken.</p>
-        <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
-          <label>Gebruikersnaam
-            <input type="text" id="admin-login-user" required autocomplete="username" placeholder="admin"/>
-          </label>
-          <label>Wachtwoord
-            <input type="password" id="admin-login-pass" required autocomplete="current-password" placeholder="••••••••"/>
-          </label>
-          <div id="admin-login-error" class="login-error"></div>
-          <button type="submit" class="btn-primary" id="admin-login-btn">Inloggen</button>
-        </form>
-      </div>
 
       <div id="admin-authenticated" style="display:none">
 

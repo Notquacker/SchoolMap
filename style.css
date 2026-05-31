@@ -715,6 +715,54 @@ body.dark .time-slot.active { background: #c62828; border-color: #c62828; color:
   color: #333;
 }
 
+/* ── Sidebar login ── */
+.sidebar-login-form {
+  padding: 12px 20px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sidebar-login-form input {
+  padding: 8px 10px;
+  border: 1.5px solid #ddd;
+  border-radius: 7px;
+  font-size: .85rem;
+  outline: none;
+  transition: border-color .15s;
+}
+.sidebar-login-form input:focus { border-color: #c62828; }
+.sidebar-login-form .btn-primary { margin-top: 0; width: 100%; }
+.sidebar-login-form .login-error { font-size: .75rem; min-height: 14px; }
+
+.sidebar-user-bar {
+  padding: 10px 20px 4px;
+  font-size: .82rem;
+  color: #555;
+}
+.sidebar-user-bar strong { color: #c62828; }
+.sidebar-logout-btn {
+  display: block;
+  width: calc(100% - 40px);
+  margin: 4px 20px 8px;
+  padding: 8px;
+  border: 1.5px solid #c62828;
+  border-radius: 7px;
+  background: none;
+  color: #c62828;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.sidebar-logout-btn:hover { background: #fde8e8; }
+
+body.dark .sidebar-login-form input { background: #252840; border-color: #3a3d55; color: #d0d4e0; }
+body.dark .sidebar-login-form input:focus { border-color: #ef9a9a; }
+body.dark .sidebar-user-bar { color: #888; }
+body.dark .sidebar-user-bar strong { color: #ef9a9a; }
+body.dark .sidebar-logout-btn { border-color: #ef9a9a; color: #ef9a9a; }
+body.dark .sidebar-logout-btn:hover { background: #2a1515; }
+
 /* ── Donkere modus knop in sidebar ── */
 .sidebar-bottom {
   border-top: 1px solid #eee;

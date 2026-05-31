@@ -216,10 +216,24 @@ async function handleLogout() {
 }
 
 function updateAuthUI(loggedIn) {
-  document.getElementById('rooster-login').style.display         = loggedIn ? 'none'  : 'block';
+  // Verberg/toon de sidebar-links voor beschermde tabs
+  ['rooster', 'admin'].forEach(tab => {
+    const li = document.querySelector(`.sidebar-nav-link[data-tab="${tab}"]`)?.parentElement;
+    if (li) li.style.display = loggedIn ? '' : 'none';
+  });
+
+  // Als uitgelogd en op een beschermde tab, ga terug naar plattegrond
+  if (!loggedIn) {
+    const active = document.querySelector('.sidebar-nav-link.active')?.dataset.tab;
+    if (active === 'rooster' || active === 'admin') switchTab('plattegrond');
+  }
+
   document.getElementById('rooster-authenticated').style.display = loggedIn ? 'block' : 'none';
-  document.getElementById('admin-login').style.display           = loggedIn ? 'none'  : 'block';
   document.getElementById('admin-authenticated').style.display   = loggedIn ? 'block' : 'none';
+  document.getElementById('sidebar-login-section').style.display = loggedIn ? 'none'  : 'block';
+  document.getElementById('sidebar-user-section').style.display  = loggedIn ? 'block' : 'none';
+  const su = document.getElementById('sidebar-username');
+  if (su) su.textContent = currentUser || '';
   ['rooster-username', 'admin-username'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = currentUser || '';
@@ -232,6 +246,7 @@ function updateAuthUI(loggedIn) {
 // TAB NAVIGATIE
 // ══════════════════════════════════════════════════════════════════════
 function switchTab(name) {
+  if ((name === 'rooster' || name === 'admin') && !currentUser) return;
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
   document.getElementById('tab-' + name).style.display = 'block';
   document.querySelectorAll('.sidebar-nav-link').forEach(a => a.classList.remove('active'));
