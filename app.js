@@ -35,10 +35,10 @@ const BUILDINGS = {
   'LB': {
     name: 'Laagbouw',
     floors: [
+      { id: '-1', label: '-1', image: null },
       { id: 'bg', label: 'BG', image: 'Plattegrond/Laagbouw/BEGANE_GROND_A.png' },
       { id: '1e', label: '1e', image: 'Plattegrond/Laagbouw/1E_VERDIEPING_A.png' },
       { id: '2e', label: '2e', image: null },
-      { id: '3e', label: '3e', image: null },
     ]
   },
   'HB': {
@@ -69,6 +69,7 @@ function getCurrentImage() {
 
 function initMapSwitcher() {
   renderFloorBtns();
+  loadFloor();
 }
 
 function renderFloorBtns() {
