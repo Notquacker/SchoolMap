@@ -837,7 +837,7 @@ body.dark .hint { color: #555; }
 body.dark .switcher-label { color: #555; }
 body.dark .detail-row { border-bottom-color: #252840; }
 body.dark .detail-row span:first-child { color: #777; }
-body.dark .zoom-wrapper { background: #12141e; border-color: #252840; }
+body.dark .zoom-wrapper { background: #000000; border-color: #252840; }
 body.dark .rooster-table th { background: #252840; color: #90b8f8; }
 body.dark .rooster-table td { border-bottom-color: #252840; }
 body.dark .rooster-table tr:hover td { background: #252840; }
