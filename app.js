@@ -1034,6 +1034,11 @@ setTimeout(setupOverlays, 1000);
 // ══════════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════════
+if (localStorage.getItem('darkMode') === '1') {
+  document.body.classList.add('dark');
+  const btn = document.getElementById('dark-toggle-btn');
+  if (btn) btn.textContent = 'Lichte modus';
+}
 initRoomClasses();
 initMapSwitcher();
 
@@ -1053,12 +1058,6 @@ function toggleDarkMode() {
   if (btn) btn.textContent = isDark ? 'Lichte modus' : 'Donkere modus';
   loadFloor();
 }
-if (localStorage.getItem('darkMode') === '1') {
-  document.body.classList.add('dark');
-  const btn = document.getElementById('dark-toggle-btn');
-  if (btn) btn.textContent = 'Lichte modus';
-}
-
 connectMqtt();
 checkAuth();
 refreshCache();
