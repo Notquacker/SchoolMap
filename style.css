@@ -81,6 +81,7 @@ h2 { font-size: .95rem; font-weight: 600; margin-bottom: 10px; color: #8b949e; t
 /* Mobiel (<768px): zijbalk als overlay drawer */
 @media (max-width: 767px) {
   .page-wrapper { display: block; }
+  #info-sidebar-btn { display: flex !important; }
 
   #info-sidebar {
     position: fixed;
