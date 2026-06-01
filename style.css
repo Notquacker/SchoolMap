@@ -13,11 +13,12 @@ body {
 header {
   background: #161b22;
   color: #e6edf3;
-  padding: 0 28px;
+  padding: 0 12px;
   height: 62px;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
   align-items: center;
+  gap: 8px;
   border-bottom: 1px solid #30363d;
   position: sticky;
   top: 0;
@@ -25,9 +26,9 @@ header {
 }
 header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -.3px; }
 .subtitle  { font-size: .78rem; color: #8b949e; margin-top: 1px; }
-.header-left { display: flex; flex-direction: column; gap: 1px; }
-.header-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-#clock { font-size: 1rem; font-weight: 600; letter-spacing: 1px; color: #e6edf3; font-variant-numeric: tabular-nums; }
+.header-left   { display: flex; align-items: center; justify-content: flex-start; }
+.header-center { text-align: center; }
+.header-right  { display: flex; align-items: center; justify-content: flex-end; }
 
 .mqtt-badge {
   font-size: .65rem;
@@ -734,7 +735,9 @@ h2 { font-size: .95rem; font-weight: 600; margin-bottom: 10px; color: #8b949e; t
   background: rgba(255,255,255,.08);
   border: 1px solid #30363d;
   color: #e6edf3;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
+  font-style: italic;
+  font-weight: 700;
   width: 38px;
   height: 38px;
   border-radius: 7px;
@@ -748,8 +751,6 @@ h2 { font-size: .95rem; font-weight: 600; margin-bottom: 10px; color: #8b949e; t
 }
 #info-sidebar-btn:hover { background: rgba(255,255,255,.14); }
 body.light #info-sidebar-btn { background: rgba(255,255,255,.15); border-color: transparent; }
-
-.header-left { display: flex; align-items: center; gap: 10px; }
 
 /* ── Burger menu knop ── */
 #burger-btn {
