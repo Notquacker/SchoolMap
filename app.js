@@ -262,10 +262,18 @@ function toggleMenu() {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebar-overlay').classList.toggle('open');
 }
-
 function closeMenu() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+function toggleInfoSidebar() {
+  document.getElementById('info-sidebar').classList.toggle('open');
+  document.getElementById('info-sidebar-overlay').classList.toggle('open');
+}
+function closeInfoSidebar() {
+  document.getElementById('info-sidebar').classList.remove('open');
+  document.getElementById('info-sidebar-overlay').classList.remove('open');
 }
 
 

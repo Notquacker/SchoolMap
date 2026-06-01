@@ -15,13 +15,19 @@
 
   <header>
     <div class="header-left">
-      <h1>Lokaalbezetting</h1>
-      <span class="subtitle">Museumpark</span>
+      <button id="info-sidebar-btn" onclick="toggleInfoSidebar()" aria-label="Info zijbalk">≡</button>
+      <div>
+        <h1>Lokaalbezetting</h1>
+        <span class="subtitle">Museumpark</span>
+      </div>
     </div>
     <div class="header-right">
       <button id="burger-btn" onclick="toggleMenu()" aria-label="Menu">☰</button>
     </div>
   </header>
+
+  <!-- ── Info sidebar overlay (mobiel) ──────────────────────────────── -->
+  <div id="info-sidebar-overlay" onclick="closeInfoSidebar()"></div>
 
   <!-- ── Sidebar ─────────────────────────────────────────────────── -->
   <div id="sidebar-overlay" onclick="closeMenu()"></div>
