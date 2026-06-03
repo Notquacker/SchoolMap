@@ -340,7 +340,7 @@ def log_occupancy():
     bezet   = bool(d.get('bezet', False))
     if not room_id:
         return jsonify({'ok': False, 'error': 'room_id vereist'}), 400
-    entry = (str(uuid.uuid4()), room_id, 1 if bezet else 0, datetime.now().isoformat())
+    entry = (str(uuid.uuid4()), room_id, bezet, datetime.now().isoformat())
     with get_db() as db:
         db.execute(
             f'INSERT INTO occupancy_log VALUES ({PH},{PH},{PH},{PH})', entry
