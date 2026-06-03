@@ -986,6 +986,67 @@ body.light #info-sidebar-btn { background: rgba(255,255,255,.15); border-color: 
 .so-auto  { border-color: rgba(0,207,255,.4);  color: #00cfff; }
 .so-auto:hover,  .so-auto.active  { background: rgba(0,207,255,.12); }
 
+/* ── Admin Dashboard ── */
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.dash-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dash-search {
+  padding: 6px 10px;
+  border: 1px solid #30363d;
+  border-radius: 7px;
+  background: #0d1117;
+  color: #e6edf3;
+  font-size: .83rem;
+  font-family: 'Inter', sans-serif;
+  width: 180px;
+  outline: none;
+  transition: border-color .15s;
+}
+.dash-search:focus { border-color: #58a6ff; }
+.dash-count {
+  font-size: .75rem;
+  color: #8b949e;
+  white-space: nowrap;
+  min-width: 56px;
+}
+.dash-header-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.dash-sort-arrow { font-size: .65rem; color: #6e7681; }
+.dash-sort-arrow.asc, .dash-sort-arrow.desc { color: #00ff88; }
+
+.sidebar-divider {
+  height: 1px;
+  background: #30363d;
+  margin: 6px 16px;
+  list-style: none;
+}
+body.light .dash-search { background: white; color: #333; border-color: #ddd; }
+body.light .sidebar-divider { background: #e8eaf0; }
+
 /* ── MQTT log ── */
 #mqtt-log { display: flex; gap: 16px; flex-wrap: wrap; }
 .mqtt-log-group { flex: 1; min-width: 200px; margin-bottom: 0; }

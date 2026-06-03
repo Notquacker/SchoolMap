@@ -37,9 +37,13 @@
       <button class="sidebar-close" onclick="closeMenu()">✕</button>
     </div>
     <ul class="sidebar-menu">
-      <li><a class="sidebar-nav-link active" data-tab="plattegrond" href="#" onclick="switchTab('plattegrond'); closeMenu(); return false;">Plattegrond</a></li>
-      <li><a class="sidebar-nav-link" data-tab="rooster"     href="#" onclick="switchTab('rooster');     closeMenu(); return false;">Rooster uploaden</a></li>
-      <li><a class="sidebar-nav-link" data-tab="admin"       href="#" onclick="switchTab('admin');       closeMenu(); return false;">Admin</a></li>
+      <li><a class="sidebar-nav-link active" data-tab="plattegrond"      href="#" onclick="switchTab('plattegrond');      closeMenu(); return false;">Plattegrond</a></li>
+      <li><a class="sidebar-nav-link" data-tab="rooster"              href="#" onclick="switchTab('rooster');              closeMenu(); return false;">Rooster uploaden</a></li>
+      <li><a class="sidebar-nav-link" data-tab="admin"                href="#" onclick="switchTab('admin');                closeMenu(); return false;">Admin</a></li>
+      <li class="sidebar-divider"></li>
+      <li><a class="sidebar-nav-link" data-tab="dash-reserveringen"   href="#" onclick="switchTab('dash-reserveringen');   closeMenu(); return false;">📊 Reserveringen</a></li>
+      <li><a class="sidebar-nav-link" data-tab="dash-rooster"         href="#" onclick="switchTab('dash-rooster');         closeMenu(); return false;">📅 Rooster data</a></li>
+      <li><a class="sidebar-nav-link" data-tab="dash-bezettingslog"   href="#" onclick="switchTab('dash-bezettingslog');   closeMenu(); return false;">📡 Bezettingslog</a></li>
     </ul>
     <div class="sidebar-bottom">
       <!-- Inloggen (zichtbaar als uitgelogd) -->
@@ -382,6 +386,75 @@
       </div><!-- /admin-authenticated -->
 
     </div><!-- /tab-admin -->
+
+    <!-- ═══ TAB: RESERVERINGEN DASHBOARD ═══ -->
+    <div id="tab-dash-reserveringen" class="tab-content" style="display:none">
+      <div class="admin-section">
+        <div class="dash-header">
+          <h2>📊 Reserveringen</h2>
+          <div class="dash-controls">
+            <input class="dash-search" id="dash-search-reserveringen" type="search" placeholder="Filteren…"
+                   oninput="filterDashboard('reserveringen', this.value)">
+            <span class="dash-count" id="dash-count-reserveringen"></span>
+            <button class="btn-outline" onclick="downloadDashCSV('reserveringen')">⬇ CSV</button>
+            <button class="btn-outline" onclick="downloadDashJSON('reserveringen')">⬇ JSON</button>
+            <button class="btn-outline" onclick="loadDashboard('reserveringen')">↻</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="rooster-table" id="dash-table-reserveringen">
+            <thead id="dash-thead-reserveringen"></thead>
+            <tbody id="dash-tbody-reserveringen"><tr><td colspan="9" class="hint" style="text-align:center;padding:24px">Tabblad selecteren om te laden.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: ROOSTER DATA DASHBOARD ═══ -->
+    <div id="tab-dash-rooster" class="tab-content" style="display:none">
+      <div class="admin-section">
+        <div class="dash-header">
+          <h2>📅 Rooster data</h2>
+          <div class="dash-controls">
+            <input class="dash-search" id="dash-search-rooster" type="search" placeholder="Filteren…"
+                   oninput="filterDashboard('rooster', this.value)">
+            <span class="dash-count" id="dash-count-rooster"></span>
+            <button class="btn-outline" onclick="downloadDashCSV('rooster')">⬇ CSV</button>
+            <button class="btn-outline" onclick="downloadDashJSON('rooster')">⬇ JSON</button>
+            <button class="btn-outline" onclick="loadDashboard('rooster')">↻</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="rooster-table" id="dash-table-rooster">
+            <thead id="dash-thead-rooster"></thead>
+            <tbody id="dash-tbody-rooster"><tr><td colspan="8" class="hint" style="text-align:center;padding:24px">Tabblad selecteren om te laden.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: BEZETTINGSLOG DASHBOARD ═══ -->
+    <div id="tab-dash-bezettingslog" class="tab-content" style="display:none">
+      <div class="admin-section">
+        <div class="dash-header">
+          <h2>📡 Bezettingslog</h2>
+          <div class="dash-controls">
+            <input class="dash-search" id="dash-search-bezettingslog" type="search" placeholder="Filteren…"
+                   oninput="filterDashboard('bezettingslog', this.value)">
+            <span class="dash-count" id="dash-count-bezettingslog"></span>
+            <button class="btn-outline" onclick="downloadDashCSV('bezettingslog')">⬇ CSV</button>
+            <button class="btn-outline" onclick="downloadDashJSON('bezettingslog')">⬇ JSON</button>
+            <button class="btn-outline" onclick="loadDashboard('bezettingslog')">↻</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="rooster-table" id="dash-table-bezettingslog">
+            <thead id="dash-thead-bezettingslog"></thead>
+            <tbody id="dash-tbody-bezettingslog"><tr><td colspan="4" class="hint" style="text-align:center;padding:24px">Tabblad selecteren om te laden.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
   </main>
 

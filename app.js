@@ -218,17 +218,23 @@ async function handleLogout() {
   updateAuthUI(false);
 }
 
+const ADMIN_TABS = ['rooster', 'admin', 'dash-reserveringen', 'dash-rooster', 'dash-bezettingslog'];
+
 function updateAuthUI(loggedIn) {
   // Verberg/toon de sidebar-links voor beschermde tabs
-  ['rooster', 'admin'].forEach(tab => {
+  ADMIN_TABS.forEach(tab => {
     const li = document.querySelector(`.sidebar-nav-link[data-tab="${tab}"]`)?.parentElement;
     if (li) li.style.display = loggedIn ? '' : 'none';
+  });
+  // Toon/verberg de scheider boven de dashboard-links
+  document.querySelectorAll('.sidebar-divider').forEach(el => {
+    el.style.display = loggedIn ? '' : 'none';
   });
 
   // Als uitgelogd en op een beschermde tab, ga terug naar plattegrond
   if (!loggedIn) {
     const active = document.querySelector('.sidebar-nav-link.active')?.dataset.tab;
-    if (active === 'rooster' || active === 'admin') switchTab('plattegrond');
+    if (ADMIN_TABS.includes(active)) switchTab('plattegrond');
   }
 
   document.getElementById('rooster-authenticated').style.display = loggedIn ? 'block' : 'none';
@@ -249,13 +255,14 @@ function updateAuthUI(loggedIn) {
 // TAB NAVIGATIE
 // ══════════════════════════════════════════════════════════════════════
 function switchTab(name) {
-  if ((name === 'rooster' || name === 'admin') && !currentUser) return;
+  if (ADMIN_TABS.includes(name) && !currentUser) return;
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
   document.getElementById('tab-' + name).style.display = 'block';
   document.querySelectorAll('.sidebar-nav-link').forEach(a => a.classList.remove('active'));
   const link = document.querySelector(`.sidebar-nav-link[data-tab="${name}"]`);
   if (link) link.classList.add('active');
   if (name === 'admin' && currentUser) loadAllReservations();
+  if (name.startsWith('dash-')) loadDashboard(name.replace('dash-', ''));
 }
 
 function toggleMenu() {
@@ -1087,6 +1094,150 @@ if (fpImg?.complete && fpImg.naturalWidth) setupOverlays();
 window.addEventListener('load', setupOverlays);
 window.addEventListener('resize', setupOverlays);
 setTimeout(setupOverlays, 1000);
+
+
+// ══════════════════════════════════════════════════════════════════════
+// ADMIN DASHBOARD
+// ══════════════════════════════════════════════════════════════════════
+const DASH_CONFIG = {
+  'reserveringen': {
+    url: '/api/reservations',
+    cols: ['id','room_id','naam','studentnummer','datum','van','tot','doel','created_at'],
+    hdrs: ['ID','Lokaal','Naam','Studentnr','Datum','Van','Tot','Doel','Aangemaakt'],
+  },
+  'rooster': {
+    url: '/api/rooster',
+    cols: ['id','room_id','datum','van','tot','groep','vak','uploaded_at'],
+    hdrs: ['ID','Lokaal','Datum','Van','Tot','Groep','Vak','Geüpload'],
+  },
+  'bezettingslog': {
+    url: '/api/occupancy?limit=500',
+    cols: ['id','room_id','bezet','timestamp'],
+    hdrs: ['ID','Lokaal','Bezet','Tijdstip'],
+  },
+};
+const _dashState = {};  // key → { raw, filtered, sortCol, sortDir }
+
+async function loadDashboard(key) {
+  const cfg = DASH_CONFIG[key];
+  if (!cfg) return;
+  const tbody = document.getElementById(`dash-tbody-${key}`);
+  const thead = document.getElementById(`dash-thead-${key}`);
+  if (!tbody || !thead) return;
+
+  tbody.innerHTML = `<tr><td colspan="${cfg.cols.length}" style="text-align:center;color:#8b949e;padding:24px">Laden…</td></tr>`;
+
+  try {
+    const data = await API.get(cfg.url);
+    _dashState[key] = { raw: data, filtered: [...data], sortCol: -1, sortDir: 1 };
+
+    thead.innerHTML = `<tr>${cfg.hdrs.map((h, i) =>
+      `<th><button class="dash-header-btn" onclick="sortDashboard('${key}',${i})">
+        ${h}&nbsp;<span class="dash-sort-arrow" id="dash-arr-${key}-${i}">↕</span>
+      </button></th>`
+    ).join('')}</tr>`;
+
+    // Reset search
+    const search = document.getElementById(`dash-search-${key}`);
+    if (search) search.value = '';
+
+    _renderDash(key);
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="${cfg.cols.length}" style="text-align:center;color:#ff4444;padding:24px">Fout bij laden: ${e.message || e}</td></tr>`;
+  }
+}
+
+function _renderDash(key) {
+  const cfg = DASH_CONFIG[key];
+  const st  = _dashState[key];
+  if (!cfg || !st) return;
+  const tbody  = document.getElementById(`dash-tbody-${key}`);
+  const countEl= document.getElementById(`dash-count-${key}`);
+  if (!tbody) return;
+  if (countEl) countEl.textContent = `${st.filtered.length} rijen`;
+
+  if (!st.filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="${cfg.cols.length}" class="hint" style="text-align:center;padding:20px">Geen resultaten.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = st.filtered.map(row =>
+    `<tr>${cfg.cols.map(c => {
+      let v = row[c] ?? '';
+      if (c === 'bezet') v = v ? '✅ Ja' : '⬜ Nee';
+      // Truncate long IDs
+      if (c === 'id' && String(v).length > 12) v = `<span title="${v}">${String(v).slice(0,8)}…</span>`;
+      return `<td>${v}</td>`;
+    }).join('')}</tr>`
+  ).join('');
+}
+
+function filterDashboard(key, query) {
+  const st  = _dashState[key];
+  const cfg = DASH_CONFIG[key];
+  if (!st || !cfg) return;
+  const q = query.toLowerCase().trim();
+  st.filtered = q
+    ? st.raw.filter(row => cfg.cols.some(c => String(row[c] ?? '').toLowerCase().includes(q)))
+    : [...st.raw];
+  if (st.sortCol >= 0) _sortApply(key);
+  _renderDash(key);
+}
+
+function sortDashboard(key, colIdx) {
+  const st  = _dashState[key];
+  const cfg = DASH_CONFIG[key];
+  if (!st || !cfg) return;
+  st.sortDir = (st.sortCol === colIdx) ? st.sortDir * -1 : 1;
+  st.sortCol = colIdx;
+  cfg.cols.forEach((_, i) => {
+    const el = document.getElementById(`dash-arr-${key}-${i}`);
+    if (!el) return;
+    el.textContent = i === colIdx ? (st.sortDir === 1 ? '↑' : '↓') : '↕';
+    el.className   = 'dash-sort-arrow' + (i === colIdx ? (st.sortDir === 1 ? ' asc' : ' desc') : '');
+  });
+  _sortApply(key);
+  _renderDash(key);
+}
+
+function _sortApply(key) {
+  const st  = _dashState[key];
+  const cfg = DASH_CONFIG[key];
+  const col = cfg.cols[st.sortCol];
+  st.filtered.sort((a, b) =>
+    String(a[col] ?? '').localeCompare(String(b[col] ?? '')) * st.sortDir
+  );
+}
+
+function downloadDashCSV(key) {
+  const st  = _dashState[key];
+  const cfg = DASH_CONFIG[key];
+  if (!st || !cfg) return;
+  const escape = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
+  const rows = [
+    cfg.hdrs.map(escape).join(','),
+    ...st.filtered.map(r => cfg.cols.map(c => {
+      let v = r[c] ?? '';
+      if (c === 'bezet') v = v ? 'Ja' : 'Nee';
+      return escape(v);
+    }).join(','))
+  ];
+  _dashDL(rows.join('\n'), `${key}-${_today()}.csv`, 'text/csv');
+}
+
+function downloadDashJSON(key) {
+  const st = _dashState[key];
+  if (!st) return;
+  _dashDL(JSON.stringify(st.filtered, null, 2), `${key}-${_today()}.json`, 'application/json');
+}
+
+function _dashDL(content, name, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function _today() { return new Date().toISOString().slice(0,10); }
 
 
 // ══════════════════════════════════════════════════════════════════════
