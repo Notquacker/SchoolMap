@@ -457,23 +457,26 @@ function connectMqtt() {
       const roomId = parts[0];
       if (!ROOMS[roomId]) return;
 
-      // Admin override actief — negeer MQTT voor deze kamer
-      if (sensorOverride[roomId] != null) return;
-
       const low = txt.toLowerCase();
       let bezet;
       try { bezet = JSON.parse(low).bezet; }
       catch { bezet = low === 'true' || low === '1' || low === 'bezet'; }
-      const prevStatus = roomStatus[roomId];
-      setRoomStatus(roomId, bezet ? 'bezet' : 'vrij');
-      // Log statuswijziging naar de backend (alleen bij echte verandering)
-      if ((bezet ? 'bezet' : 'vrij') !== prevStatus) {
+
+      // Altijd de ruwe sensordata loggen, ongeacht admin override
+      const prevSensorBezet = roomStatus[roomId] === 'bezet';
+      if (bezet !== prevSensorBezet) {
         fetch('/api/occupancy', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ room_id: roomId, bezet })
         }).catch(() => {});
       }
+
+      // Admin override actief — pas de weergave niet aan
+      if (sensorOverride[roomId] != null) return;
+
+      const prevStatus = roomStatus[roomId];
+      setRoomStatus(roomId, bezet ? 'bezet' : 'vrij');
     });
   } catch {
     updateMqttStatus('disconnected', 'Niet beschikbaar');
