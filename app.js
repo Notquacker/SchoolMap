@@ -337,6 +337,7 @@ function updateMqttStatus(state, text) {
 const SENSOR_ROOMS   = ['243', '249', 'expo'];
 const lastMqttMsg    = {};   // roomId → { time: Date, payload, bezet }
 const sensorOverride = {};   // roomId → 'bezet' | 'vrij' | null (null = sensor volgen)
+const sensorBezet    = {};   // roomId → true/false, ruwe sensorstatus ongeacht override
 const SENSOR_TIMEOUT_MIN = 3;
 
 function renderSensorCard(roomId) {
@@ -462,9 +463,9 @@ function connectMqtt() {
       try { bezet = JSON.parse(low).bezet; }
       catch { bezet = low === 'true' || low === '1' || low === 'bezet'; }
 
-      // Altijd de ruwe sensordata loggen, ongeacht admin override
-      const prevSensorBezet = roomStatus[roomId] === 'bezet';
-      if (bezet !== prevSensorBezet) {
+      // Ruwe sensorstatus bijhouden en loggen bij elke echte verandering
+      if (bezet !== sensorBezet[roomId]) {
+        sensorBezet[roomId] = bezet;
         fetch('/api/occupancy', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
