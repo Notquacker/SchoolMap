@@ -173,14 +173,18 @@ def _init_db_postgres():
             "INSERT INTO users (username, password, role) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING",
             ('admin', generate_password_hash('School2026!'), 'admin')
         )
-        # Migrations for existing databases
-        for migration in [
-            "ALTER TABLE reservations ADD COLUMN studentnummer TEXT DEFAULT ''",
-        ]:
-            try:
-                db.execute(migration)
-            except Exception:
-                pass
+        # Migratie: gebruik DO $$ zodat de transactie intact blijft als kolom al bestaat
+        db.execute("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='reservations' AND column_name='studentnummer'
+                ) THEN
+                    ALTER TABLE reservations ADD COLUMN studentnummer TEXT DEFAULT '';
+                END IF;
+            END $$;
+        """)
         db.commit()
 
 
@@ -479,9 +483,15 @@ def frontend(path='index.html'):
     return send_from_directory(FRONTEND, path)
 
 
-# ── Start ─────────────────────────────────────────────────────────────
-if __name__ == '__main__':
+# ── Init database bij opstarten (ook bij gunicorn/Render) ─────────────
+try:
     init_db()
+except Exception as e:
+    print(f'[WARN] init_db mislukt: {e}')
+
+
+# ── Start (lokaal) ────────────────────────────────────────────────────
+if __name__ == '__main__':
     port  = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('RENDER') is None
     print(f'\n Backend gestart op http://localhost:{port}')
