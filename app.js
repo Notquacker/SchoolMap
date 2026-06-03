@@ -457,7 +457,16 @@ function connectMqtt() {
       let bezet;
       try { bezet = JSON.parse(low).bezet; }
       catch { bezet = low === 'true' || low === '1' || low === 'bezet'; }
+      const prevStatus = roomStatus[roomId];
       setRoomStatus(roomId, bezet ? 'bezet' : 'vrij');
+      // Log statuswijziging naar de backend (alleen bij echte verandering)
+      if ((bezet ? 'bezet' : 'vrij') !== prevStatus) {
+        fetch('/api/occupancy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room_id: roomId, bezet })
+        }).catch(() => {});
+      }
     });
   } catch {
     updateMqttStatus('disconnected', 'Niet beschikbaar');
