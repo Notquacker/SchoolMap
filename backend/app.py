@@ -340,10 +340,20 @@ def log_occupancy():
     bezet   = bool(d.get('bezet', False))
     if not room_id:
         return jsonify({'ok': False, 'error': 'room_id vereist'}), 400
-    entry = (str(uuid.uuid4()), room_id, bezet, datetime.now().isoformat())
+
+    if room_id == 'expo':
+        return jsonify({'ok': True, 'skipped': True})
+
     with get_db() as db:
+        last = db.execute(
+            f'SELECT bezet FROM occupancy_log WHERE room_id={PH} ORDER BY timestamp DESC LIMIT 1',
+            (room_id,)
+        ).fetchone()
+        if last is not None and bool(last['bezet']) == bezet:
+            return jsonify({'ok': True, 'skipped': True})
         db.execute(
-            f'INSERT INTO occupancy_log VALUES ({PH},{PH},{PH},{PH})', entry
+            f'INSERT INTO occupancy_log VALUES ({PH},{PH},{PH},{PH})',
+            (str(uuid.uuid4()), room_id, bezet, datetime.now().isoformat())
         )
         db.commit()
     return jsonify({'ok': True})
