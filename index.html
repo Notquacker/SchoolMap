@@ -44,6 +44,7 @@
       <li><a class="sidebar-nav-link" data-tab="dash-reserveringen"   href="#" onclick="switchTab('dash-reserveringen');   closeMenu(); return false;">📊 Reserveringen</a></li>
       <li><a class="sidebar-nav-link" data-tab="dash-rooster"         href="#" onclick="switchTab('dash-rooster');         closeMenu(); return false;">📅 Rooster data</a></li>
       <li><a class="sidebar-nav-link" data-tab="dash-bezettingslog"   href="#" onclick="switchTab('dash-bezettingslog');   closeMenu(); return false;">📡 Bezettingslog</a></li>
+      <li><a class="sidebar-nav-link" data-tab="dash-mqtt-berichten" href="#" onclick="switchTab('dash-mqtt-berichten'); closeMenu(); return false;">📶 Berichtenlog</a></li>
     </ul>
     <div class="sidebar-bottom">
       <!-- Inloggen (zichtbaar als uitgelogd) -->
@@ -433,6 +434,30 @@
       </div>
     </div>
 
+    <!-- ═══ TAB: MQTT BERICHTENLOG DASHBOARD ═══ -->
+    <div id="tab-dash-mqtt-berichten" class="tab-content" style="display:none">
+      <div class="admin-section">
+        <div class="dash-header">
+          <h2>📶 MQTT Berichtenlog</h2>
+          <div class="dash-controls">
+            <input class="dash-search" id="dash-search-mqtt-berichten" type="search" placeholder="Filteren…"
+                   oninput="filterDashboard('mqtt-berichten', this.value)">
+            <span class="dash-count" id="dash-count-mqtt-berichten"></span>
+            <button class="btn-outline" onclick="downloadDashCSV('mqtt-berichten')">⬇ CSV</button>
+            <button class="btn-outline" onclick="downloadDashJSON('mqtt-berichten')">⬇ JSON</button>
+            <button class="btn-outline" onclick="loadDashboard('mqtt-berichten')">↻</button>
+            <button class="btn-danger"  onclick="deleteDashboard('mqtt-berichten')">🗑 Wissen</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="rooster-table" id="dash-table-mqtt-berichten">
+            <thead id="dash-thead-mqtt-berichten"></thead>
+            <tbody id="dash-tbody-mqtt-berichten"><tr><td colspan="5" class="hint" style="text-align:center;padding:24px">Tabblad selecteren om te laden.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ═══ TAB: BEZETTINGSLOG DASHBOARD ═══ -->
     <div id="tab-dash-bezettingslog" class="tab-content" style="display:none">
       <div class="admin-section">
@@ -445,6 +470,7 @@
             <button class="btn-outline" onclick="downloadDashCSV('bezettingslog')">⬇ CSV</button>
             <button class="btn-outline" onclick="downloadDashJSON('bezettingslog')">⬇ JSON</button>
             <button class="btn-outline" onclick="loadDashboard('bezettingslog')">↻</button>
+            <button class="btn-danger"  onclick="deleteDashboard('bezettingslog')">🗑 Wissen</button>
           </div>
         </div>
         <div class="table-scroll">

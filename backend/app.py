@@ -109,6 +109,13 @@ def _init_db_sqlite():
                 bezet     INTEGER,
                 timestamp TEXT
             );
+            CREATE TABLE IF NOT EXISTS mqtt_log (
+                id        TEXT PRIMARY KEY,
+                topic     TEXT,
+                room_id   TEXT,
+                payload   TEXT,
+                timestamp TEXT
+            );
         ''')
         db.execute(
             'INSERT OR IGNORE INTO users (username, password, role) VALUES (?,?,?)',
@@ -165,6 +172,13 @@ def _init_db_postgres():
                 id        TEXT PRIMARY KEY,
                 room_id   TEXT,
                 bezet     BOOLEAN,
+                timestamp TEXT
+            )''',
+            '''CREATE TABLE IF NOT EXISTS mqtt_log (
+                id        TEXT PRIMARY KEY,
+                topic     TEXT,
+                room_id   TEXT,
+                payload   TEXT,
                 timestamp TEXT
             )''',
         ]:
@@ -426,6 +440,53 @@ def occupancy_stats():
         stats[room_id] = round(total_min)
 
     return jsonify({'datum': datum, 'stats': stats})
+
+
+@app.route('/api/occupancy', methods=['DELETE'])
+@require_login
+def clear_occupancy():
+    with get_db() as db:
+        db.execute('DELETE FROM occupancy_log')
+        db.commit()
+    return jsonify({'ok': True})
+
+
+# ── MQTT berichtenlog ─────────────────────────────────────────────────
+@app.route('/api/mqtt-log', methods=['POST'])
+def log_mqtt():
+    d = request.json or {}
+    topic   = d.get('topic', '')
+    room_id = d.get('room_id', '')
+    payload = d.get('payload', '')
+    if not topic:
+        return jsonify({'ok': False, 'error': 'topic vereist'}), 400
+    with get_db() as db:
+        db.execute(
+            f'INSERT INTO mqtt_log VALUES ({PH},{PH},{PH},{PH},{PH})',
+            (str(uuid.uuid4()), topic, room_id, payload, datetime.now().isoformat())
+        )
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/mqtt-log', methods=['GET'])
+@require_login
+def get_mqtt_log():
+    limit = min(int(request.args.get('limit', 500)), 5000)
+    with get_db() as db:
+        rows = db.execute(
+            f'SELECT * FROM mqtt_log ORDER BY timestamp DESC LIMIT {limit}'
+        ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/mqtt-log', methods=['DELETE'])
+@require_login
+def clear_mqtt_log():
+    with get_db() as db:
+        db.execute('DELETE FROM mqtt_log')
+        db.commit()
+    return jsonify({'ok': True})
 
 
 # ── Admin data viewer (login required) ───────────────────────────────

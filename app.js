@@ -218,7 +218,7 @@ async function handleLogout() {
   updateAuthUI(false);
 }
 
-const ADMIN_TABS = ['rooster', 'admin', 'dash-reserveringen', 'dash-rooster', 'dash-bezettingslog'];
+const ADMIN_TABS = ['rooster', 'admin', 'dash-reserveringen', 'dash-rooster', 'dash-bezettingslog', 'dash-mqtt-berichten'];
 
 function updateAuthUI(loggedIn) {
   // Verberg/toon de sidebar-links voor beschermde tabs
@@ -334,10 +334,12 @@ function updateMqttStatus(state, text) {
 }
 
 // ── Sensor tracking ───────────────────────────────────────────────────
-const SENSOR_ROOMS   = ['243', '249', 'expo'];
-const lastMqttMsg    = {};   // roomId → { time: Date, payload, bezet }
-const sensorOverride = {};   // roomId → 'bezet' | 'vrij' | null (null = sensor volgen)
-const sensorBezet    = {};   // roomId → true/false, ruwe sensorstatus ongeacht override
+const SENSOR_ROOMS      = ['243', '249', 'expo'];
+const lastMqttMsg       = {};   // roomId → { time: Date, payload, bezet }
+const sensorOverride    = {};   // roomId → 'bezet' | 'vrij' | null (null = sensor volgen)
+const sensorBezet       = {};   // roomId → true/false, ruwe sensorstatus ongeacht override
+const _mqttLogTimers    = {};   // roomId → timestamp laatste DB-opslag (ms)
+const MQTT_LOG_INTERVAL = 5 * 60 * 1000;  // 5 minuten per sensor
 const SENSOR_TIMEOUT_MIN = 3;
 
 function renderSensorCard(roomId) {
@@ -453,6 +455,18 @@ function connectMqtt() {
     mqttClient.on('message', (topic, message) => {
       const txt = message.toString().trim();
       mqttLogAdd(topic, txt);
+
+      // Throttled: sla bericht op in DB (max 1x per 5 minuten per sensor)
+      const logRoomId = topic.replace(MQTT_TOPIC_BASE, '').split('/')[0];
+      const now = Date.now();
+      if (!_mqttLogTimers[logRoomId] || now - _mqttLogTimers[logRoomId] >= MQTT_LOG_INTERVAL) {
+        _mqttLogTimers[logRoomId] = now;
+        fetch('/api/mqtt-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic, room_id: logRoomId, payload: txt })
+        }).catch(() => {});
+      }
 
       const parts  = topic.replace(MQTT_TOPIC_BASE, '').split('/');
       const roomId = parts[0];
@@ -1119,6 +1133,11 @@ const DASH_CONFIG = {
     cols: ['id','room_id','bezet','timestamp'],
     hdrs: ['ID','Lokaal','Bezet','Tijdstip'],
   },
+  'mqtt-berichten': {
+    url: '/api/mqtt-log?limit=500',
+    cols: ['id','topic','room_id','payload','timestamp'],
+    hdrs: ['ID','Topic','Lokaal','Payload','Tijdstip'],
+  },
 };
 const _dashState = {};  // key → { raw, filtered, sortCol, sortDir }
 
@@ -1242,6 +1261,24 @@ function _dashDL(content, name, type) {
   URL.revokeObjectURL(a.href);
 }
 function _today() { return new Date().toISOString().slice(0,10); }
+
+async function deleteDashboard(key) {
+  const labels = {
+    'bezettingslog':  'de bezettingslog',
+    'mqtt-berichten': 'de MQTT berichtenlog',
+    'reserveringen':  'alle reserveringen',
+    'rooster':        'alle roosterdata',
+  };
+  if (!confirm(`Weet je zeker dat je ${labels[key] || key} wilt wissen? Dit kan niet ongedaan worden gemaakt.`)) return;
+  const urlMap = {
+    'bezettingslog':  '/api/occupancy',
+    'mqtt-berichten': '/api/mqtt-log',
+  };
+  const url = urlMap[key];
+  if (!url) { alert('Verwijderen niet ondersteund voor dit dashboard.'); return; }
+  await API.delete(url);
+  loadDashboard(key);
+}
 
 
 // ══════════════════════════════════════════════════════════════════════
