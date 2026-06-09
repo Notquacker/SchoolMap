@@ -340,6 +340,7 @@ const sensorOverride    = {};   // roomId → 'bezet' | 'vrij' | null (null = se
 const sensorBezet       = {};   // roomId → true/false, ruwe sensorstatus ongeacht override
 const _mqttLogTimers    = {};   // roomId → timestamp laatste DB-opslag (ms)
 const MQTT_LOG_INTERVAL = 5 * 60 * 1000;  // 5 minuten per sensor
+const _sensorDebounce   = {};   // roomId → setTimeout handle (onderdrukt LWT-ruis)
 const SENSOR_TIMEOUT_MIN = 3;
 
 function renderSensorCard(roomId) {
@@ -477,21 +478,33 @@ function connectMqtt() {
       try { bezet = JSON.parse(low).bezet; }
       catch { bezet = low === 'true' || low === '1' || low === 'bezet'; }
 
-      // Ruwe sensorstatus bijhouden en loggen bij elke echte verandering
-      if (bezet !== sensorBezet[roomId]) {
-        sensorBezet[roomId] = bezet;
-        fetch('/api/occupancy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ room_id: roomId, bezet })
-        }).catch(() => {});
+      // Bezet: direct verwerken | Vrij: 15s debounce (onderdrukt LWT/reconnect-ruis)
+      if (bezet) {
+        if (_sensorDebounce[roomId]) { clearTimeout(_sensorDebounce[roomId]); delete _sensorDebounce[roomId]; }
+        if (sensorBezet[roomId] !== true) {
+          sensorBezet[roomId] = true;
+          fetch('/api/occupancy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ room_id: roomId, bezet: true })
+          }).catch(() => {});
+        }
+        if (sensorOverride[roomId] == null) setRoomStatus(roomId, 'bezet');
+      } else {
+        if (_sensorDebounce[roomId]) return;
+        _sensorDebounce[roomId] = setTimeout(() => {
+          delete _sensorDebounce[roomId];
+          if (sensorBezet[roomId] !== false) {
+            sensorBezet[roomId] = false;
+            fetch('/api/occupancy', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ room_id: roomId, bezet: false })
+            }).catch(() => {});
+          }
+          if (sensorOverride[roomId] == null) setRoomStatus(roomId, 'vrij');
+        }, 15000);
       }
-
-      // Admin override actief — pas de weergave niet aan
-      if (sensorOverride[roomId] != null) return;
-
-      const prevStatus = roomStatus[roomId];
-      setRoomStatus(roomId, bezet ? 'bezet' : 'vrij');
     });
   } catch {
     updateMqttStatus('disconnected', 'Niet beschikbaar');
@@ -1187,6 +1200,10 @@ function _renderDash(key) {
     `<tr>${cfg.cols.map(c => {
       let v = row[c] ?? '';
       if (c === 'bezet') v = v ? '✅ Ja' : '⬜ Nee';
+      if (c === 'timestamp' && v) {
+        try { v = new Date(v + 'Z').toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'medium' }); }
+        catch {}
+      }
       // Truncate long IDs
       if (c === 'id' && String(v).length > 12) v = `<span title="${v}">${String(v).slice(0,8)}…</span>`;
       return `<td>${v}</td>`;
